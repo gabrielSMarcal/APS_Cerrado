@@ -7,4 +7,3 @@ df = df.drop(['Satelite', 'Pais', 'Municipio', 'Bioma'], axis=1)
 
 df['DataHora'] = pd.to_datetime(df['DataHora']).dt.date
 
-print(df.head())
