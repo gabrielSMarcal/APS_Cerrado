@@ -1,9 +1,9 @@
 import pandas as pd
-import plotly.express as px
 
-df = pd.read_csv('queimadas_cerrado_01.csv')
+def format_csv(csvpath):
+    df = pd.read_csv(csvpath)
+    df = df.drop(['Satelite', 'Pais', 'Bioma'], axis=1)
+    df['DataHora'] = pd.to_datetime(df['DataHora']).dt.date
 
-df = df.drop(['Satelite', 'Pais', 'Municipio', 'Bioma'], axis=1)
-
-df['DataHora'] = pd.to_datetime(df['DataHora']).dt.date
+    return df
 
