@@ -1,54 +1,108 @@
 import plotly.express as px
-from data import check_data
+import pandas as pd
+from data import fonte
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
 
+df, df_list = fonte.format_csv()
 
-df = check_data.check_errors()
+app = dash.Dash(__name__)
 
-print("gerando mapa")
-fig = px.scatter_map(
-    df,
-    lat="Latitude",      
-    lon="Longitude",    
-    color="RiscoFogo",
-    hover_name="Estado",
-    hover_data={
-        "Municipio": True,
-        "DataHora": True,
-        "DiaSemChuva": True,
-        "Precipitacao": True,
-        "FRP": True,
-        "Latitude": False,
-        "Longitude": False
-    },
-    map_style="carto-positron",
-    zoom=4
+app.layout = html.Div([
+    dcc.DatePickerRange(
+        id='date-range-slider',
+        min_date_allowed=df['Data'].min(),
+        max_date_allowed=df['Data'].max(),
+        start_date=df['Data'].min(),
+        end_date=df['Data'].max(),
+    ),
+    dcc.Graph(id='forest_burn_map')
+])
+
+@app.callback(
+    Output('forest_burn_map', 'figure'),
+    [Input('date-range-slider', 'start_date'),
+     Input('date-range-slider', 'end_date')]
 )
-fig.show()
+def update_map(start_date, end_date):
+    if not start_date or not end_date:
+        return dash.no_update
 
-fig = px.scatter(
-    df,
-    color='RiscoFogo',
-    y='DataHora',
-    x='DiaSemChuva'
-)
+    start = pd.to_datetime(start_date).date()
+    end = pd.to_datetime(end_date).date()
 
-fig.show()
+    filtered_df = df[(df['Data'] >= start) & (df['Data'] <= end)]
 
-fig = px.scatter(
-    df,
-    color='RiscoFogo',
-    y='DataHora',
-    x='FRP'
-)
+    fig = px.scatter_map(
+        filtered_df,
+        lat="Latitude",      
+        lon="Longitude",    
+        color="RiscoFogo",
+        color_continuous_scale=px.colors.sequential.Turbo,
+        hover_name="Estado",
+        hover_data={
+            "Municipio": True,
+            "DataHora": True,
+            "DiaSemChuva": True,
+            "Precipitacao": True,
+            "FRP": True,
+            "Latitude": False,
+            "Longitude": False
+        },
+        map_style="carto-positron",
+        zoom=4
+    )
+    
+    return fig
 
-fig.show()
+if __name__ == '__main__':
+    app.run(debug=True)
 
-fig = px.scatter(
-    df,
-    color='RiscoFogo',
-    y='DataHora',
-    x='Precipitacao'
-)
+for dfs in df_list:
+    fig = px.scatter_map(
+        dfs,
+        lat="Latitude",      
+        lon="Longitude",    
+        color="RiscoFogo",
+        color_continuous_scale=px.colors.sequential.Turbo,
+        hover_name="Estado",
+        hover_data={
+            "Municipio": True,
+            "DataHora": True,
+            "DiaSemChuva": True,
+            "Precipitacao": True,
+            "FRP": True,
+            "Latitude": False,
+            "Longitude": False
+        },
+        map_style="carto-positron",
+        zoom=4
+    )
 
-fig.show()
+    fig.show()
 
+
+
+# fig = px.scatter(
+#     df,
+#     color='RiscoFogo',
+#     y='DataHora',
+#     x='DiaSemChuva'
+# )
+#
+#
+# fig = px.scatter(
+#     df,
+#     color='RiscoFogo',
+#     y='DataHora',
+#     x='FRP'
+# )
+#
+#
+# fig = px.scatter(
+#     df,
+#     color='RiscoFogo',
+#     y='DataHora',
+#     x='Precipitacao'
+# )
