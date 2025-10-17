@@ -19,4 +19,6 @@ def format_csv():
 
         clean_df_list.append(clean_df)
 
+    df.to_csv('./data/treated_db/db_cerrado_cleaned.csv', index=False)
+
     return df, clean_df_list
