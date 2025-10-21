@@ -1,24 +1,27 @@
-from .check_data import check_errors
+from .check_data import check_errors, check_errors_csv_list
 import pandas as pd
 
+
 def format_csv():
-    df, list_of_dfs = check_errors()
+    df = check_errors()
     df = df.drop(['Satelite', 'Pais', 'Bioma'], axis=1)
     df['DataHora'] = pd.to_datetime(df['DataHora'], errors='coerce')
     df['Data'] = df['DataHora'].dt.date
     df['RiscoFogo'] = df['RiscoFogo'] * 100
 
+    return df
+
+def format_csv_list():
+    df_list = check_errors_csv_list()
     clean_df_list = []
 
-    for dfs in list_of_dfs:
-        clean_df = dfs
+    for df in df_list:
+        clean_df = df
         clean_df = clean_df.drop(['Satelite', 'Pais', 'Bioma'], axis=1)
         clean_df['DataHora'] = pd.to_datetime(clean_df['DataHora'], errors='coerce')
         clean_df['Data'] = clean_df['DataHora'].dt.date
         clean_df['RiscoFogo'] = clean_df['RiscoFogo'] * 100
 
         clean_df_list.append(clean_df)
-
-    df.to_csv('./data/treated_db/db_cerrado_cleaned.csv', index=False)
-
-    return df, clean_df_list
+        
+    return clean_df_list
