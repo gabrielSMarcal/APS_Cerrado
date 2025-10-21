@@ -5,7 +5,8 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 
-df, df_list = fonte.format_csv()
+df = fonte.format_csv()
+df_list = fonte.format_csv_list()
 
 app = dash.Dash(__name__)
 
@@ -22,8 +23,8 @@ app.layout = html.Div([
 
 @app.callback(
     Output('forest_burn_map', 'figure'),
-    [Input('date-range-slider', 'start_date'),
-     Input('date-range-slider', 'end_date')]
+    Input('date-range-slider', 'start_date'),
+    Input('date-range-slider', 'end_date')
 )
 def update_map(start_date, end_date):
     if not start_date or not end_date:
@@ -59,9 +60,9 @@ def update_map(start_date, end_date):
 if __name__ == '__main__':
     app.run(debug=True)
 
-for dfs in df_list:
+for df in df_list:
     fig = px.scatter_map(
-        dfs,
+        df,
         lat="Latitude",      
         lon="Longitude",    
         color="RiscoFogo",
