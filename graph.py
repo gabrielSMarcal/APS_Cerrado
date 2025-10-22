@@ -1,12 +1,13 @@
 import plotly.express as px
 import pandas as pd
-from data import fonte
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 
-df = fonte.format_csv()
-df_list = fonte.format_csv_list()
+from data.connection import connection, get_df_list
+
+df = connection()
+df_list = get_df_list()
 
 app = dash.Dash(__name__)
 

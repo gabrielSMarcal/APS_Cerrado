@@ -1,8 +1,6 @@
-from .connection import connection, get_df_list
 import pandas as pd
 
-def check_errors():
-    df = connection()
+def check_errors(df):
     drop_rows = df[df['DiaSemChuva'] == -999].index
     df = df.drop(drop_rows)
     
@@ -21,9 +19,8 @@ def check_errors():
     df.to_csv('./data/treated_db/db_cerrado_cleaned.csv', index=False)
     return df
 
-def check_errors_csv_list():
+def check_errors_csv_list(df_list):
     clean_df_list = []
-    df_list = get_df_list()
 
     for df in df_list:
         drop_rows = df[df['DiaSemChuva'] == -999].index

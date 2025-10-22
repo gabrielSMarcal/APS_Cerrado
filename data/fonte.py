@@ -1,9 +1,7 @@
-from .check_data import check_errors, check_errors_csv_list
 import pandas as pd
 
 
-def format_csv():
-    df = check_errors()
+def format_csv(df):
     df = df.drop(['Satelite', 'Pais', 'Bioma'], axis=1)
     df['DataHora'] = pd.to_datetime(df['DataHora'], errors='coerce')
     df['Data'] = df['DataHora'].dt.date
@@ -11,8 +9,7 @@ def format_csv():
 
     return df
 
-def format_csv_list():
-    df_list = check_errors_csv_list()
+def format_csv_list(df_list):
     clean_df_list = []
 
     for df in df_list:
