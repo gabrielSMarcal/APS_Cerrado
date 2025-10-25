@@ -13,7 +13,9 @@ from sklearn.metrics import silhouette_score
 
 from data import connection as c
 
-df = c.connection()
+df = pd.read_csv('db_2024.csv')
+
+df['Data'] = pd.to_datetime(df['DataHora']).dt.date
 
 def criacao_variaveis_mes(df):
 
@@ -53,9 +55,9 @@ def preparar_dados(df):
     y = df_copy['RiscoFogo']
     X = df_copy.drop(columns=['RiscoFogo'])
     
-    # Verificar se há valores não numéricos
-    print(f"Colunas em X: {X.columns.tolist()}")
-    print(f"Tipos de dados em X:\n{X.dtypes}")
+    # # Verificar se há valores não numéricos
+    # print(f"Colunas em X: {X.columns.tolist()}")
+    # print(f"Tipos de dados em X:\n{X.dtypes}")
     
     # Normalização
     scaler = StandardScaler()
@@ -67,6 +69,8 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20)):
     
     inercias = []
     silhuetas = []
+    
+    print(f'Linhas em X_scaled: {X_scaled.shape[0]}')
     
     for k in k_range:
         print(f"Calculando para k={k}...")
@@ -99,13 +103,19 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20)):
     ax2.grid(True)
     
     plt.tight_layout()
+    
+    # SALVAR O GRÁFICO COMO IMAGEM
+    plt.savefig('graficos_clustering.png', dpi=300, bbox_inches='tight')
+    print("✅ Gráfico salvo em 'graficos_clustering.png'")
+    
     plt.show()
     
     melhor_k = k_range[np.argmax(silhuetas)]
     print(f'Melhor número de clusters (k) baseado na silhueta: {melhor_k}')
     print(f'Silhouette Score em k=12 {silhuetas[10]:.4f}')
     
-    return melhor_k, silhuetas
+    # RETORNAR TAMBÉM OS DADOS PARA RECRIAR O GRÁFICO NO DASH
+    return melhor_k, silhuetas, inercias, k_range
 
 def criar_clusters(X_scaled, clusters, y):
     
@@ -133,62 +143,7 @@ def criar_clusters(X_scaled, clusters, y):
     plt.tight_layout()
     plt.show()
     
-def visualizar_clusters(X_scaled, clusters, y):
-    """
-    Visualiza os clusters criados
-    """
-    # Se tiver muitas dimensões, usar PCA para visualização
-    from sklearn.decomposition import PCA
-    
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X_scaled)
-    
-    plt.figure(figsize=(15, 5))
-    
-    # Plot 1: Clusters
-    plt.subplot(1, 2, 1)
-    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='viridis', alpha=0.6)
-    plt.colorbar(scatter, label='Cluster')
-    plt.xlabel('Primeira Componente Principal')
-    plt.ylabel('Segunda Componente Principal')
-    plt.title('Visualização dos Clusters (PCA)')
-    
-    # Plot 2: Risco de Fogo
-    plt.subplot(1, 2, 2)
-    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='YlOrRd', alpha=0.6)
-    plt.colorbar(scatter, label='RiscoFogo')
-    plt.xlabel('Primeira Componente Principal')
-    plt.ylabel('Segunda Componente Principal')
-    plt.title('Risco de Fogo no Espaço PCA')
-    
-    plt.tight_layout()
-    plt.show()
 
-def analisar_clusters(df_original, clusters, y):
-    """
-    Analisa as características de cada cluster
-    """
-    df_analise = df_original.copy()
-    df_analise['Cluster'] = clusters
-    df_analise['RiscoFogo'] = y
-    
-    # Estatísticas por cluster
-    print("\n=== Análise por Cluster ===")
-    for cluster_id in sorted(df_analise['Cluster'].unique()):
-        print(f"\n--- Cluster {cluster_id} ---")
-        cluster_data = df_analise[df_analise['Cluster'] == cluster_id]
-        print(f"Tamanho: {len(cluster_data)} registros")
-        print(f"RiscoFogo médio: {cluster_data['RiscoFogo'].mean():.2f}")
-        print(f"RiscoFogo mediano: {cluster_data['RiscoFogo'].median():.2f}")
-        print(f"RiscoFogo min-max: {cluster_data['RiscoFogo'].min():.2f} - {cluster_data['RiscoFogo'].max():.2f}")
-        
-        # Meses mais comuns neste cluster
-        colunas_mes = [col for col in df_analise.columns if col.startswith('Mes_')]
-        if colunas_mes:
-            meses_ativos = cluster_data[colunas_mes].sum().sort_values(ascending=False).head(3)
-            print(f"Meses mais frequentes: {meses_ativos.index.tolist()}")
-    
-    return df_analise
 
 # Executar o pipeline de clustering
 if __name__ == "__main__":
@@ -196,22 +151,8 @@ if __name__ == "__main__":
     X, X_scaled, y, scaler = preparar_dados(df)
     
     print("\nEncontrando melhor número de clusters...")
-    melhor_k = encontrar_cluster(X_scaled)
+    melhor_k, silhuetas, inercias, k_range = encontrar_cluster(X_scaled)
     
-    print(f"\nCriando clusters com k={melhor_k}...")
-    kmeans_model, clusters = criar_clusters(X_scaled, melhor_k)
+    # K-12 é o melhor
     
-    print("\nVisualizando clusters...")
-    visualizar_clusters(X_scaled, clusters, y)
     
-    print("\nAnalisando características dos clusters...")
-    df_com_clusters = analisar_clusters(X, clusters, y)
-    
-    # Salvar modelo e scaler para uso posterior em previsão
-    import pickle
-    with open('kmeans_model.pkl', 'wb') as f:
-        pickle.dump(kmeans_model, f)
-    with open('scaler.pkl', 'wb') as f:
-        pickle.dump(scaler, f)
-    
-    print("\nModelo e scaler salvos com sucesso!")
