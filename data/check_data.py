@@ -15,8 +15,6 @@ def check_errors(df):
 
     df = df.dropna(subset=['FRP', 'DiaSemChuva', 'Precipitacao', 'RiscoFogo'])
 
-
-    df.to_csv('./data/treated_db/db_cerrado_cleaned.csv', index=False)
     return df
 
 def check_errors_csv_list(df_list):
