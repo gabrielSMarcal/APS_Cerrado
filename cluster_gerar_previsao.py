@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
 import pickle
-from datetime import datetime, timedelta
+from datetime import datetime
 from cluster_utils import preparar_dados
 from data.connection import connection
 
 def carregar_modelo(caminho_modelo='modelo_cluster.pkl'):
-    """Carrega o modelo treinado"""
+    '''
+    Carrega o modelo treinado
+    '''
     try:
         with open(caminho_modelo, 'rb') as f:
             modelo = pickle.load(f)
@@ -17,9 +19,10 @@ def carregar_modelo(caminho_modelo='modelo_cluster.pkl'):
         return None
 
 def analisar_padroes_historicos(df_historico):
-    """
+    '''
     Analisa padrões históricos para entender distribuição espacial e temporal
-    """
+    '''
+    
     df_hist = df_historico.copy()
     df_hist['Data'] = pd.to_datetime(df_hist['Data'])
     df_hist['Mes'] = df_hist['Data'].dt.month
@@ -41,9 +44,14 @@ def analisar_padroes_historicos(df_historico):
     coords_freq = df_hist.groupby(['Latitude', 'Longitude', 'Estado', 'Municipio']).size().reset_index(name='Frequencia')
     coords_freq = coords_freq.sort_values('Frequencia', ascending=False)
     
+    # Calcular bounds do cerrado baseado nos dados históricos
+    lat_min, lat_max = df_hist['Latitude'].min(), df_hist['Latitude'].max()
+    lon_min, lon_max = df_hist['Longitude'].min(), df_hist['Longitude'].max()
+    
     print(f"\n=== Análise de Padrões Históricos ===")
     print(f"Total de registros históricos: {len(df_hist)}")
     print(f"Coordenadas únicas: {len(coords_freq)}")
+    print(f"Área do Cerrado: Lat [{lat_min:.2f}, {lat_max:.2f}] | Lon [{lon_min:.2f}, {lon_max:.2f}]")
     print(f"Distribuição mensal de focos:")
     for mes, prop in sorted(distribuicao_mensal.items()):
         print(f"  Mês {mes}: {prop*100:.1f}%")
@@ -51,20 +59,49 @@ def analisar_padroes_historicos(df_historico):
     return {
         'distribuicao_mensal': distribuicao_mensal,
         'stats_mes_regiao': stats_por_mes_regiao,
-        'coords_freq': coords_freq
+        'coords_freq': coords_freq,
+        'bounds': {'lat_min': lat_min, 'lat_max': lat_max, 'lon_min': lon_min, 'lon_max': lon_max}
     }
 
-def gerar_dados_2026_inteligente(padroes, df_historico, total_registros=50000):
-    """
+def gerar_coordenada_interpolada(coords_freq, bounds, usar_hotspot=True):
+    '''
+    Gera uma coordenada, podendo ser de hotspot ou interpolada na região do cerrado
+    '''
+    if usar_hotspot:
+        # Escolher de um hotspot existente
+        idx = np.random.choice(len(coords_freq) // 3)
+        coord = coords_freq.iloc[idx]
+        return coord['Latitude'], coord['Longitude'], coord['Estado'], coord['Municipio']
+    else:
+        # Gerar coordenada interpolada dentro dos bounds do cerrado
+        # Adicionar pequena variação nas coordenadas existentes
+        idx = np.random.randint(0, len(coords_freq))
+        coord_base = coords_freq.iloc[idx]
+        
+        # Adicionar variação de até 0.5 graus (aproximadamente 55km)
+        lat = coord_base['Latitude'] + np.random.uniform(-0.5, 0.5)
+        lon = coord_base['Longitude'] + np.random.uniform(-0.5, 0.5)
+        
+        # Garantir que está dentro dos bounds
+        lat = np.clip(lat, bounds['lat_min'], bounds['lat_max'])
+        lon = np.clip(lon, bounds['lon_min'], bounds['lon_max'])
+        
+        return lat, lon, coord_base['Estado'], coord_base['Municipio']
+
+def gerar_dados_2026_inteligente(padroes, total_registros=None):
+    '''
     Gera dados para 2026 de forma inteligente, respeitando padrões históricos
-    """
-    data_inicio = datetime(2026, 1, 1)
-    data_fim = datetime(2026, 12, 31)
+    '''
+    
+    # Gerar número aleatório de registros entre 45k e 60k se não especificado
+    if total_registros is None:
+        total_registros = np.random.randint(45000, 60001)
     
     registros = []
     coords_freq = padroes['coords_freq']
     distribuicao_mensal = padroes['distribuicao_mensal']
     stats_mes_regiao = padroes['stats_mes_regiao']
+    bounds = padroes['bounds']
     
     # Calcular quantos registros por mês (respeitando sazonalidade)
     registros_por_mes = {}
@@ -76,7 +113,7 @@ def gerar_dados_2026_inteligente(padroes, df_historico, total_registros=50000):
     diff = total_registros - sum(registros_por_mes.values())
     registros_por_mes[8] += diff  # Adicionar diferença no mês de pico (agosto)
     
-    print(f"\n=== Gerando {total_registros} registros para 2026 ===")
+    print(f"\n=== Gerando {total_registros:,} registros para 2026 ===")
     
     # Para cada mês, gerar registros distribuídos ao longo dos dias
     for mes in range(1, 13):
@@ -91,21 +128,14 @@ def gerar_dados_2026_inteligente(padroes, df_historico, total_registros=50000):
             dia = np.random.randint(1, dias_no_mes + 1)
             data = datetime(2026, mes, dia)
             
-            # Escolher coordenada baseada em frequência histórica (mais peso para hotspots)
-            # 70% de chance de escolher dos 30% hotspots mais frequentes
-            if np.random.random() < 0.7:
-                # Hotspot
-                idx = np.random.choice(len(coords_freq) // 3)
-            else:
-                # Coordenada aleatória
-                idx = np.random.randint(0, len(coords_freq))
-            
-            coord = coords_freq.iloc[idx]
+            # 50% hotspot, 50% coordenadas interpoladas (para melhor distribuição)
+            usar_hotspot = np.random.random() < 0.5
+            lat, lon, estado, municipio = gerar_coordenada_interpolada(coords_freq, bounds, usar_hotspot)
             
             # Buscar estatísticas para esse mês e estado
             stats = stats_mes_regiao[
                 (stats_mes_regiao['Mes'] == mes) & 
-                (stats_mes_regiao['Estado'] == coord['Estado'])
+                (stats_mes_regiao['Estado'] == estado)
             ]
             
             if len(stats) > 0:
@@ -128,10 +158,10 @@ def gerar_dados_2026_inteligente(padroes, df_historico, total_registros=50000):
             
             registros.append({
                 'Data': data,
-                'Latitude': coord['Latitude'],
-                'Longitude': coord['Longitude'],
-                'Estado': coord['Estado'],
-                'Municipio': coord['Municipio'],
+                'Latitude': round(lat, 6),
+                'Longitude': round(lon, 6),
+                'Estado': estado,
+                'Municipio': municipio,
                 'DiaSemChuva': dias_sem_chuva,
                 'Precipitacao': round(precipitacao, 2),
                 'FRP': round(frp, 2)
@@ -142,16 +172,17 @@ def gerar_dados_2026_inteligente(padroes, df_historico, total_registros=50000):
     # Ordenar por data para ficar orgânico
     df_2026 = df_2026.sort_values('Data').reset_index(drop=True)
     
-    print(f"\nGerados {len(df_2026)} registros")
-    print(f"Período: {df_2026['Data'].min()} a {df_2026['Data'].max()}")
-    print(f"Coordenadas únicas: {df_2026[['Latitude', 'Longitude']].drop_duplicates().shape[0]}")
+    print(f"\n✓ Gerados {len(df_2026):,} registros")
+    print(f"✓ Período: {df_2026['Data'].min()} a {df_2026['Data'].max()}")
+    print(f"✓ Coordenadas únicas: {df_2026[['Latitude', 'Longitude']].drop_duplicates().shape[0]:,}")
     
     return df_2026
 
 def prever_dados(modelo, df_2026):
-    """
+    '''
     Aplica o modelo para prever RiscoFogo
-    """
+    '''
+    
     print("\nPreparando dados para previsão...")
     
     # Preparar dados usando a mesma função de preparação
@@ -204,15 +235,21 @@ def prever_dados(modelo, df_2026):
             df_2026['RiscoFogo'] = 0.5
         print(f"Risco calculado por normalização")
     
+    # Converter RiscoFogo para porcentagem inteira (0-100)
+    df_2026['RiscoFogo'] = np.ceil(df_2026['RiscoFogo'] * 100).astype(int)
+    
     # Ajustar sutilmente variáveis baseado no RiscoFogo previsto
-    df_2026['DiaSemChuva'] = (df_2026['DiaSemChuva'] * (1 + df_2026['RiscoFogo'] * 0.3)).astype(int)
-    df_2026['Precipitacao'] = df_2026['Precipitacao'] * (1 - df_2026['RiscoFogo'] * 0.2)
-    df_2026['FRP'] = df_2026['FRP'] * (1 + df_2026['RiscoFogo'] * 1.5)
+    df_2026['DiaSemChuva'] = (df_2026['DiaSemChuva'] * (1 + df_2026['RiscoFogo'] / 100 * 0.3)).astype(int)
+    df_2026['Precipitacao'] = df_2026['Precipitacao'] * (1 - df_2026['RiscoFogo'] / 100 * 0.2)
+    df_2026['FRP'] = df_2026['FRP'] * (1 + df_2026['RiscoFogo'] / 100 * 1.5)
     
     return df_2026
 
 def salvar_previsao(df_previsao, nome_arquivo='previsao_2026_inteligente.csv'):
-    """Salva as previsões em CSV no formato correto"""
+    '''
+    Salva as previsões em CSV no formato correto
+    '''
+    
     colunas_finais = ['Data', 'Latitude', 'Longitude', 'RiscoFogo', 
                       'DiaSemChuva', 'Precipitacao', 'FRP']
     
@@ -222,7 +259,7 @@ def salvar_previsao(df_previsao, nome_arquivo='previsao_2026_inteligente.csv'):
     # Arredondar valores numéricos
     df_final['Latitude'] = df_final['Latitude'].round(6)
     df_final['Longitude'] = df_final['Longitude'].round(6)
-    df_final['RiscoFogo'] = df_final['RiscoFogo'].round(4)
+    df_final['RiscoFogo'] = df_final['RiscoFogo'].astype(int)
     df_final['DiaSemChuva'] = df_final['DiaSemChuva'].astype(int)
     df_final['Precipitacao'] = df_final['Precipitacao'].round(2)
     df_final['FRP'] = df_final['FRP'].round(2)
@@ -240,7 +277,10 @@ def salvar_previsao(df_previsao, nome_arquivo='previsao_2026_inteligente.csv'):
     print(df_temp.groupby('Mes').size())
 
 def main():
-    """Função principal para gerar previsões"""
+    '''
+    Função principal para gerar previsões
+    '''
+    
     print("="*60)
     print("    Gerador Inteligente de Previsões 2026 - Cerrado")
     print("="*60)
@@ -262,9 +302,9 @@ def main():
     print("\n[3/5] Analisando padrões históricos...")
     padroes = analisar_padroes_historicos(df_historico)
     
-    # 4. Gerar dados para 2026 de forma inteligente
+    # 4. Gerar dados para 2026 de forma inteligente (com número aleatório de linhas)
     print("\n[4/5] Gerando dados para 2026...")
-    df_2026 = gerar_dados_2026_inteligente(padroes, df_historico, total_registros=50000)
+    df_2026 = gerar_dados_2026_inteligente(padroes)  # Sem passar total_registros
     
     # 5. Fazer previsões
     print("\n[5/5] Aplicando modelo para previsões...")
@@ -277,8 +317,8 @@ def main():
     print("\n" + "="*60)
     print("    ESTATÍSTICAS DA PREVISÃO")
     print("="*60)
-    print(f"RiscoFogo médio: {df_previsao['RiscoFogo'].mean():.4f}")
-    print(f"RiscoFogo min/max: {df_previsao['RiscoFogo'].min():.4f} / {df_previsao['RiscoFogo'].max():.4f}")
+    print(f"RiscoFogo médio: {df_previsao['RiscoFogo'].mean():.1f}%")
+    print(f"RiscoFogo min/max: {df_previsao['RiscoFogo'].min()}% / {df_previsao['RiscoFogo'].max()}%")
     print(f"DiaSemChuva médio: {df_previsao['DiaSemChuva'].mean():.1f} dias")
     print(f"Precipitacao média: {df_previsao['Precipitacao'].mean():.2f} mm")
     print(f"FRP médio: {df_previsao['FRP'].mean():.2f}")

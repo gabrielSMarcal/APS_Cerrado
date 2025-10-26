@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 
 # Substitua pelo caminho correto do arquivo CSV (certifique-se de que é o de 365 dias ou 90 dias conforme deseja)
-file_path = "previsao_2026_365_dias.csv"
+file_path = "previsao_2026_inteligente.csv"
 
 # Carregar como texto para tratar possíveis linhas de cabeçalho repetidas
 try:
