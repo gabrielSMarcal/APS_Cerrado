@@ -13,11 +13,19 @@ from sklearn.metrics import silhouette_score
 
 from data import connection as c
 
-df = pd.read_csv('db_2024.csv')
+# Já utilizado
+# df = pd.read_csv('db_2024.csv')
 
-df['Data'] = pd.to_datetime(df['DataHora']).dt.date
+df = c.connection()
 
 def criacao_variaveis_mes(df):
+    
+    '''
+    Criação das variáveis dummy para os meses do ano
+    '''
+    
+    # Criar a coluna Data a partir de DataHora
+    df['Data'] = pd.to_datetime(df['DataHora']).dt.date
 
     # Converter para data
     df['Data'] = pd.to_datetime(df['Data'])
@@ -34,14 +42,17 @@ def criacao_variaveis_mes(df):
     
     return df
 
-df = criacao_variaveis_mes(df)
-
 def preparar_dados(df):
+    
+    '''
+    Formação dos dados para o KMeans
+    '''
+    
     # Criar uma cópia para não modificar o original
     df_copy = df.copy()
     
     # Remover colunas não necessárias para o modelo
-    colunas_remover = ['Data']
+    colunas_remover = ['DataHora']
     
     # Verificar se existem outras colunas de data/objeto
     for col in df_copy.columns:
@@ -55,9 +66,9 @@ def preparar_dados(df):
     y = df_copy['RiscoFogo']
     X = df_copy.drop(columns=['RiscoFogo'])
     
-    # # Verificar se há valores não numéricos
-    # print(f"Colunas em X: {X.columns.tolist()}")
-    # print(f"Tipos de dados em X:\n{X.dtypes}")
+    # Verificar se há valores não numéricos
+    print(f"Colunas em X: {X.columns.tolist()}")
+    print(f"Tipos de dados em X:\n{X.dtypes}")
     
     # Normalização
     scaler = StandardScaler()
@@ -66,6 +77,11 @@ def preparar_dados(df):
     return X, X_scaled, y, scaler
 
 def encontrar_cluster(X_scaled, k_range=range(2, 20)):
+    
+    '''
+    Na escala de 2 a 20 clusters, encontrar o melhor número de clusters
+    usando os métodos do cotovelo e da silhueta.
+    '''
     
     inercias = []
     silhuetas = []
@@ -104,7 +120,7 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20)):
     
     plt.tight_layout()
     
-    # SALVAR O GRÁFICO COMO IMAGEM
+    # Salvar gráfico
     plt.savefig('graficos_clustering.png', dpi=300, bbox_inches='tight')
     print("✅ Gráfico salvo em 'graficos_clustering.png'")
     
@@ -114,45 +130,20 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20)):
     print(f'Melhor número de clusters (k) baseado na silhueta: {melhor_k}')
     print(f'Silhouette Score em k=12 {silhuetas[10]:.4f}')
     
-    # RETORNAR TAMBÉM OS DADOS PARA RECRIAR O GRÁFICO NO DASH
-    return melhor_k, silhuetas, inercias, k_range
-
-def criar_clusters(X_scaled, clusters, y):
-    
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X_scaled)
-    
-    plt.figure(figsize=(15, 5))
-    
-    # Plot dos clusters
-    plt.subplot(1, 2, 1)
-    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=clusters, cmap='viridis', alpha=0.6)
-    plt.colorbar(scatter, label='Cluster')
-    plt.xlabel('Componente Principal 1')
-    plt.ylabel('Componente Principal 2')
-    plt.title('Visualização dos Clusters (PCA)')
-    
-    # Plot dos riscos de fogo
-    plt.subplot(1, 2, 2)
-    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='YlOrRd', alpha=0.6)
-    plt.colorbar(scatter, label='Risco de Fogo')
-    plt.xlabel('Componente Principal 1')
-    plt.ylabel('Componente Principal 2')
-    plt.title('Risco de Fogo (PCA)')
-    
-    plt.tight_layout()
-    plt.show()
-    
+    return melhor_k, silhuetas, inercias, k_range    
 
 
-# Executar o pipeline de clustering
 if __name__ == "__main__":
+    
+    print('Criando variáveis dos meses...')
+    df = criacao_variaveis_mes(df)
+    
     print("Preparando dados...")
     X, X_scaled, y, scaler = preparar_dados(df)
     
     print("\nEncontrando melhor número de clusters...")
     melhor_k, silhuetas, inercias, k_range = encontrar_cluster(X_scaled)
     
-    # K-12 é o melhor
+# K-12 é o melhor número de clusters, alinhado com os 12 meses do ano.
     
     
