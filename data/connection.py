@@ -2,8 +2,8 @@ import pandas as pd
 import glob
 import os
 
-from data.check_data import check_errors, check_errors_csv_list
-from data.fonte import format_csv, format_csv_list
+from .check_data import check_errors, check_errors_csv_list
+from .fonte import format_csv, format_csv_list
 
 def merge_csv(df_list):
     merged_df = pd.concat(df_list, ignore_index=True)
