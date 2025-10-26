@@ -19,9 +19,6 @@ def get_df_list():
         for file in all_csv_files:
             df_list.append(pd.read_csv(file))
 
-        df_list = check_errors_csv_list(df_list)
-        df_list = format_csv_list(df_list)
-        
         return df_list
 
 def connection():
@@ -36,6 +33,24 @@ def connection():
         df = format_csv(df)
 
         return df
+    except Exception as e:
+        print(f'Falha ao conectar ao banco: {e}')
+        return None
+
+def connection_list():
+    try:
+        CSVFILEPATH = './data/base_db/*.csv' 
+        all_csv_files = glob.glob(CSVFILEPATH)
+        all_csv_files.sort()
+        df_list = []
+
+        for file in all_csv_files:
+            df_list.append(pd.read_csv(file))
+
+        df_list = check_errors_csv_list(df_list)
+        df_list = format_csv_list(df_list)
+
+        return df_list
     except Exception as e:
         print(f'Falha ao conectar ao banco: {e}')
         return None
