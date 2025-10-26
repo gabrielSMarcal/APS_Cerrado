@@ -16,30 +16,32 @@ from data import connection as c
 # Já utilizado
 # df = pd.read_csv('db_2024.csv')
 
-df = c.connection()
 
 def criacao_variaveis_mes(df):
     
     '''
     Criação das variáveis dummy para os meses do ano
     '''
-    
-    # Criar a coluna Data a partir de DataHora
-    df['Data'] = pd.to_datetime(df['DataHora']).dt.date
-
-    # Converter para data
-    df['Data'] = pd.to_datetime(df['Data'])
+    # Verificar se a coluna 'DataHora' existe
+    if 'DataHora' in df.columns:
+        # Criar a coluna 'Data' a partir de 'DataHora'
+        df['Data'] = pd.to_datetime(df['DataHora']).dt.date
+    elif 'Data' in df.columns:
+        # Garantir que a coluna 'Data' esteja no formato datetime
+        df['Data'] = pd.to_datetime(df['Data'])
+    else:
+        raise KeyError("Nenhuma coluna de data encontrada ('DataHora' ou 'Data').")
 
     # Extrair o mês
     df['Mes'] = df['Data'].dt.month
 
     # Criação dos meses dummy
-    for mes in range (1, 13):
+    for mes in range(1, 13):
         df[f'Mes_{mes}'] = (df['Mes'] == mes).astype(int)
-            
-    # Remover o mês
+
+    # Remover a coluna 'Mes'
     df = df.drop(columns=['Mes'])
-    
+
     return df
 
 def preparar_dados(df):
@@ -133,17 +135,16 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20)):
     return melhor_k, silhuetas, inercias, k_range    
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    print('Criando variáveis dos meses...')
-    df = criacao_variaveis_mes(df)
+#     print('Criando variáveis dos meses...')
+#     df = criacao_variaveis_mes(df)
     
-    print("Preparando dados...")
-    X, X_scaled, y, scaler = preparar_dados(df)
+#     print("Preparando dados...")
+#     X, X_scaled, y, scaler = preparar_dados(df)
     
-    print("\nEncontrando melhor número de clusters...")
-    melhor_k, silhuetas, inercias, k_range = encontrar_cluster(X_scaled)
+#     print("\nEncontrando melhor número de clusters...")
+#     melhor_k, silhuetas, inercias, k_range = encontrar_cluster(X_scaled)
     
 # K-12 é o melhor número de clusters, alinhado com os 12 meses do ano.
-    
-    
+

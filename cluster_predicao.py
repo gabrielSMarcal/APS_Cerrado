@@ -1,13 +1,10 @@
 import pandas as pd
-import numpy as np
-import pickle
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-from data.connection import connection
 from cluster_test.cluster import criacao_variaveis_mes
+from cluster_utils import preparar_dados
 
 def preparar_features(df):
     
@@ -42,12 +39,10 @@ def preparar_features(df):
     return df_copy, label_encoders
 
 def treinar_modelo(df, mostrar_acuracia=False):
-    
-    '''
+    """
     Treinar o modelo de predição
-    '''
-    
-    df_preparado, label_encoders = preparar_features(df)
+    """
+    df_preparado, label_encoders = preparar_dados(df)
     
     seed = 4224
     
@@ -87,7 +82,6 @@ def treinar_modelo(df, mostrar_acuracia=False):
     
     # R²: 0.8959 (89.59%) | RMSE: 10.3698 | MAE: 4.5224 | Acurácia (±10): 77.96%
     
-    # Salvar tudo em um único arquivo
     modelo_cluster = {
         'modelo': modelo,
         'scaler': scaler,
@@ -102,6 +96,6 @@ def treinar_modelo(df, mostrar_acuracia=False):
     
     return modelo_cluster
 
-df = connection()
-# treinar_modelo(df, mostrar_acuracia=True)  # Para testar
-treinar_modelo(df)  # Para treinar
+# df = connection()
+# # treinar_modelo(df, mostrar_acuracia=True)  # Para testar
+# treinar_modelo(df)  # Para treinar
