@@ -1,45 +1,58 @@
 import pandas as pd
 import plotly.express as px
 
-# Substitua pelo caminho correto do arquivo CSV (certifique-se de que é o de 90 dias)
-file_path = "previsao_2026_90_dias.csv"
+# Substitua pelo caminho correto do arquivo CSV (certifique-se de que é o de 365 dias ou 90 dias conforme deseja)
+file_path = "previsao_2026_365_dias.csv"
 
-# Carregar os dados do arquivo CSV
+# Carregar como texto para tratar possíveis linhas de cabeçalho repetidas
 try:
-    df = pd.read_csv(file_path)
-    print(f"Dados carregados com sucesso! Total de linhas: {len(df)}")
+    df = pd.read_csv(file_path, dtype=str, skip_blank_lines=True)
+    print(f"Arquivo lido como texto. Linhas iniciais: {len(df)}")
 except FileNotFoundError:
     print(f"Erro: Arquivo '{file_path}' não encontrado. Verifique o caminho.")
     exit()
 
-# Certifique-se de que a coluna 'Data' está no formato datetime
-df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+# Remover linhas que contenham um cabeçalho repetido no meio do CSV (ex.: "Data,Latitude,...")
+if 'Data' in df.columns:
+    # se por algum motivo a coluna "Data" contiver a string "Data" em registros, remover essas linhas
+    df = df[df['Data'].str.strip().ne('Data')]
 
-# Verificar se há dados após a conversão
+# Converter colunas para tipos apropriados
+cols_num = ["Latitude", "Longitude", "RiscoFogo", "DiaSemChuva", "Precipitacao", "FRP"]
+for c in cols_num:
+    if c in df.columns:
+        df[c] = pd.to_numeric(df[c], errors='coerce')
+
+# Converter Data para datetime
+if 'Data' in df.columns:
+    df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+
+# Dropar registros sem coordenadas válidas ou sem data
+before = len(df)
+df = df.dropna(subset=['Latitude', 'Longitude', 'Data'])
+after = len(df)
+print(f"Linhas com lat/lon/data válidos: {after} (removidas {before - after})")
+
 if df.empty:
-    print("Erro: O DataFrame está vazio após carregar o CSV.")
+    print("Erro: sem dados válidos após limpeza.")
     exit()
 
-# Usar todos os dados (90 dias completos)
-filtered_df = df
+# Ordenar por data (ajuda a verificar se todos os dias foram mantidos)
+df = df.sort_values('Data').reset_index(drop=True)
 
-# Verificar se há dados para plotar
-if filtered_df.empty:
-    print("Erro: Nenhum dado encontrado.")
-    exit()
+# Mostrar resumo de datas para diagnóstico
+unique_dates = df['Data'].dt.date.unique()
+print(f"Total de linhas a serem plotadas: {len(df)}")
+print(f"Dias distintos presentes no arquivo: {len(unique_dates)}. Primeiros/últimos: {unique_dates[:3]} ... {unique_dates[-3:]}")
 
-print(f"Dados a serem plotados: {len(filtered_df)} linhas")
-print(f"Período: {filtered_df['Data'].min()} até {filtered_df['Data'].max()}")
-print(f"RiscoFogo - Mín: {filtered_df['RiscoFogo'].min()}, Máx: {filtered_df['RiscoFogo'].max()}")
-
-# Criar o gráfico de dispersão no mapa
+# Criar o gráfico de dispersão no mapa (mesma configuração que já tinha)
 fig = px.scatter_mapbox(
-    filtered_df,
+    df,
     lat="Latitude",
     lon="Longitude",
-    color="RiscoFogo",  # Usando a coluna RiscoFogo
-    color_continuous_scale=['blue', 'red'],  # Degrade de azul (baixo) a vermelho (alto)
-    hover_name="Data",  # Exibir a data no hover
+    color="RiscoFogo",
+    color_continuous_scale=px.colors.sequential.Turbo,
+    hover_name="Data",
     hover_data={
         "RiscoFogo": True,
         "DiaSemChuva": True,
@@ -48,26 +61,22 @@ fig = px.scatter_mapbox(
         "Latitude": False,
         "Longitude": False
     },
-    mapbox_style="carto-positron",  # Estilo limpo para o Cerrado
-    zoom=4.5,  # Ajuste o zoom para focar no Cerrado
-    center={"lat": -15, "lon": -50},  # Centro aproximado do Cerrado
-    title="Previsão de Risco de Fogo no Cerrado - 2026 (90 dias)"
+    mapbox_style="carto-positron",
+    zoom=4.5,
+    center={"lat": -15, "lon": -50},
+    title="Previsão de Risco de Fogo no Cerrado - 2026"
 )
 
-# Personalizar o layout
 fig.update_layout(
     title={
-        'text': "Previsão de Risco de Fogo no Cerrado - 2026 (90 dias)",
+        'text': "Previsão de Risco de Fogo no Cerrado - 2026",
         'x': 0.5,
         'xanchor': 'center'
     },
-    coloraxis_colorbar=dict(
-        title="Risco de Fogo"
-    ),
+    coloraxis_colorbar=dict(title="Risco de Fogo"),
     height=700
 )
 
-# Mostrar o gráfico
 try:
     fig.show()
     print("Gráfico exibido com sucesso!")

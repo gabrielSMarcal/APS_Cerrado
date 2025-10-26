@@ -25,12 +25,16 @@ def criacao_variaveis_mes(df):
     # Verificar se a coluna 'DataHora' existe
     if 'DataHora' in df.columns:
         # Criar a coluna 'Data' a partir de 'DataHora'
-        df['Data'] = pd.to_datetime(df['DataHora']).dt.date
+        df['Data'] = pd.to_datetime(df['DataHora'], errors='coerce')
     elif 'Data' in df.columns:
         # Garantir que a coluna 'Data' esteja no formato datetime
-        df['Data'] = pd.to_datetime(df['Data'])
+        df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
     else:
         raise KeyError("Nenhuma coluna de data encontrada ('DataHora' ou 'Data').")
+
+    # Verificar se há valores inválidos após a conversão
+    if df['Data'].isna().any():
+        raise ValueError("A coluna 'Data' contém valores inválidos após a conversão para datetime.")
 
     # Extrair o mês
     df['Mes'] = df['Data'].dt.month
@@ -52,30 +56,34 @@ def preparar_dados(df):
     
     # Criar uma cópia para não modificar o original
     df_copy = df.copy()
-    
+
     # Remover colunas não necessárias para o modelo
-    colunas_remover = ['DataHora']
-    
+    colunas_remover = []
+    if 'DataHora' in df_copy.columns:
+        colunas_remover.append('DataHora')
+    if 'Data' in df_copy.columns:
+        colunas_remover.append('Data')
+
     # Verificar se existem outras colunas de data/objeto
     for col in df_copy.columns:
-        if df_copy[col].dtype == 'object' or pd.api.types.is_datetime64_any_dtype(df_copy[col]):
-            if col not in colunas_remover:
-                colunas_remover.append(col)
-    
-    df_copy = df_copy.drop(columns=colunas_remover)
-    
+        if df_copy[col].dtype == 'object' and col not in colunas_remover:
+            colunas_remover.append(col)
+
+    # Remover as colunas identificadas
+    df_copy = df_copy.drop(columns=colunas_remover, errors='ignore')
+
     # Separar features e target
     y = df_copy['RiscoFogo']
     X = df_copy.drop(columns=['RiscoFogo'])
-    
+
     # Verificar se há valores não numéricos
     print(f"Colunas em X: {X.columns.tolist()}")
     print(f"Tipos de dados em X:\n{X.dtypes}")
-    
+
     # Normalização
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    
+
     return X, X_scaled, y, scaler
 
 def encontrar_cluster(X_scaled, k_range=range(2, 20)):
