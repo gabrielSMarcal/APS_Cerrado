@@ -3,7 +3,6 @@ from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 from app import app 
 import pages
-import os
 
 # --- Layout da Barra de Navegação (Semelhante ao MachineLearningDashboard) ---
 navegacao = dbc.NavbarSimple(
@@ -14,7 +13,7 @@ navegacao = dbc.NavbarSimple(
     ],
     brand="Análise de Risco de Fogo - Cerrado",
     brand_href="/",
-    color="primary",  # Cor primária do Bootstrap
+    color="primary",
     dark=True,
     className="mb-5"
 )
@@ -23,7 +22,7 @@ navegacao = dbc.NavbarSimple(
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     navegacao,
-    html.Div(id='conteudo', className="container-fluid") # ID 'conteudo' para o conteúdo da página
+    html.Div(id='conteudo', className="container-fluid")
 ])
 
 # --- Callback de Roteamento ---
