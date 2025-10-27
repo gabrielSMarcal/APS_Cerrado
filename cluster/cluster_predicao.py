@@ -3,8 +3,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-from cluster_test.cluster import criacao_variaveis_mes
-from cluster_utils import preparar_dados
+from cluster.cluster import criacao_variaveis_mes
+from cluster.cluster_utils import preparar_dados
 
 def preparar_features(df):
     

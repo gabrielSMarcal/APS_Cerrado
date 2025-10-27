@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.calibration import LabelEncoder
-from cluster_test.cluster import criacao_variaveis_mes
+from cluster.cluster import criacao_variaveis_mes
 
 
 def preparar_dados(df, modelo_cluster=None):

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pickle
 from datetime import datetime
-from cluster_utils import preparar_dados
+from cluster.cluster_utils import preparar_dados
 from data.connection import connection
 
 def carregar_modelo(caminho_modelo='modelo_cluster.pkl'):

@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 from data.connection import connection
-from cluster_test.cluster import criacao_variaveis_mes
+from cluster.cluster import criacao_variaveis_mes
 
 def preparar_features(df):
     
