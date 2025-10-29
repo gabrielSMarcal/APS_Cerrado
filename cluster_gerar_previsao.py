@@ -5,7 +5,7 @@ from datetime import datetime
 from cluster.cluster_utils import preparar_dados
 from data.connection import connection
 
-def carregar_modelo(caminho_modelo='modelo_cluster.pkl'):
+def carregar_modelo(caminho_modelo='./data/treated_db/modelo_cluster.pkl'):
     '''
     Carrega o modelo treinado
     '''
@@ -243,15 +243,23 @@ def prever_dados(modelo, df_2026):
     df_2026['Precipitacao'] = df_2026['Precipitacao'] * (1 - df_2026['RiscoFogo'] / 100 * 0.2)
     df_2026['FRP'] = df_2026['FRP'] * (1 + df_2026['RiscoFogo'] / 100 * 1.5)
     
+    # Criar dicionários reversos dos encoders
+    estado_decoder = {v: k for k, v in modelo['encoder_estado'].items()}
+    municipio_decoder = {v: k for k, v in modelo['encoder_municipio'].items()}
+
+    # Após a previsão
+    df_2026['Estado'] = df_2026['Estado_encoded'].map(estado_decoder)
+    df_2026['Municipio'] = df_2026['Municipio_encoded'].map(municipio_decoder)
+    
     return df_2026
 
-def salvar_previsao(df_previsao, nome_arquivo='previsao_2026_inteligente.csv'):
+def salvar_previsao(df_previsao, nome_arquivo='previsao_2026.csv'):
     '''
     Salva as previsões em CSV no formato correto
     '''
-    
-    colunas_finais = ['Data', 'Latitude', 'Longitude', 'RiscoFogo', 
-                      'DiaSemChuva', 'Precipitacao', 'FRP']
+
+    colunas_finais = ['Data', 'Estado', 'Municipio', 'RiscoFogo',
+                      'DiaSemChuva', 'Precipitacao', 'FRP', 'Latitude', 'Longitude']
     
     df_final = df_previsao[colunas_finais].copy()
     df_final['Data'] = df_final['Data'].dt.strftime('%Y-%m-%d')
@@ -287,7 +295,7 @@ def main():
     
     # 1. Carregar modelo
     print("\n[1/5] Carregando modelo...")
-    modelo = carregar_modelo('modelo_cluster.pkl')
+    modelo = carregar_modelo()
     if modelo is None:
         return
     
@@ -311,7 +319,7 @@ def main():
     df_previsao = prever_dados(modelo, df_2026)
     
     # 6. Salvar resultados
-    salvar_previsao(df_previsao, 'previsao_2026_inteligente.csv')
+    salvar_previsao(df_previsao, 'previsao_2026.csv')
     
     # Estatísticas finais
     print("\n" + "="*60)
