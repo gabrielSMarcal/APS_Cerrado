@@ -1,5 +1,8 @@
 import pandas as pd
 
+'''
+Checagem de erros para a conexão com db_cerrado
+'''
 def check_errors(df):
     drop_rows = df[df['DiaSemChuva'] == -999].index
     df = df.drop(drop_rows)
@@ -17,6 +20,9 @@ def check_errors(df):
 
     return df
 
+'''
+Checagem de erros para a conexão com a lista de CSVs
+'''
 def check_errors_csv_list(df_list):
     clean_df_list = []
 

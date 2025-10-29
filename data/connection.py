@@ -5,11 +5,17 @@ import os
 from .check_data import check_errors, check_errors_csv_list
 from .fonte import format_csv, format_csv_list
 
+'''
+Função para juntar os CSVs em um só
+'''
 def merge_csv(df_list):
     merged_df = pd.concat(df_list, ignore_index=True)
 
     return merged_df.to_csv('./data/treated_db/db_cerrado.csv', index=False) 
 
+'''
+Modulurização da função de pegar todos os CSVs de cada ano
+'''
 def get_df_list():
         CSVFILEPATH = './data/base_db/*.csv' 
         all_csv_files = glob.glob(CSVFILEPATH)
@@ -21,6 +27,9 @@ def get_df_list():
 
         return df_list
 
+'''
+Gerar a conexão com o CSV tratado e formatado para o uso na aplicação
+'''
 def connection():
     try:
         DBPATH = './data/treated_db/db_cerrado.csv'
@@ -37,6 +46,9 @@ def connection():
         print(f'Falha ao conectar ao banco: {e}')
         return None
 
+'''
+Gerar a conexão com a lista de CSVs tratados e formatados para o uso na aplicação
+'''
 def connection_list():
     try:
         CSVFILEPATH = './data/base_db/*.csv' 
