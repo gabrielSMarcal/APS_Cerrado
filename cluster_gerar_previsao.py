@@ -5,7 +5,7 @@ from datetime import datetime
 from cluster.cluster_utils import preparar_dados
 from data.connection import connection
 
-def carregar_modelo(caminho_modelo='./data/treated_db/modelo_cluster.pkl'):
+def carregar_modelo(caminho_modelo='./models/modelo_cluster.pkl'):
     '''
     Carrega o modelo treinado
     '''
@@ -88,7 +88,7 @@ def gerar_coordenada_interpolada(coords_freq, bounds, usar_hotspot=True):
         
         return lat, lon, coord_base['Estado'], coord_base['Municipio']
 
-def gerar_dados_2026_inteligente(padroes, total_registros=None):
+def gerar_dados_2026(padroes, total_registros=None):
     '''
     Gera dados para 2026 de forma inteligente, respeitando padrões históricos
     '''
@@ -243,13 +243,15 @@ def prever_dados(modelo, df_2026):
     df_2026['Precipitacao'] = df_2026['Precipitacao'] * (1 - df_2026['RiscoFogo'] / 100 * 0.2)
     df_2026['FRP'] = df_2026['FRP'] * (1 + df_2026['RiscoFogo'] / 100 * 1.5)
     
-    # Criar dicionários reversos dos encoders
-    estado_decoder = {v: k for k, v in modelo['encoder_estado'].items()}
-    municipio_decoder = {v: k for k, v in modelo['encoder_municipio'].items()}
-
-    # Após a previsão
-    df_2026['Estado'] = df_2026['Estado_encoded'].map(estado_decoder)
-    df_2026['Municipio'] = df_2026['Municipio_encoded'].map(municipio_decoder)
+    # Decodificar Estado e Municipio usando label_encoders
+    if 'label_encoders' in modelo:
+        label_encoders = modelo['label_encoders']
+        
+        if 'Estado_encoded' in df_2026.columns and 'Estado' in label_encoders:
+            df_2026['Estado'] = label_encoders['Estado'].inverse_transform(df_2026['Estado_encoded'])
+        
+        if 'Municipio_encoded' in df_2026.columns and 'Municipio' in label_encoders:
+            df_2026['Municipio'] = label_encoders['Municipio'].inverse_transform(df_2026['Municipio_encoded'])
     
     return df_2026
 
@@ -312,7 +314,7 @@ def main():
     
     # 4. Gerar dados para 2026 de forma inteligente (com número aleatório de linhas)
     print("\n[4/5] Gerando dados para 2026...")
-    df_2026 = gerar_dados_2026_inteligente(padroes)  # Sem passar total_registros
+    df_2026 = gerar_dados_2026(padroes)  # Sem passar total_registros
     
     # 5. Fazer previsões
     print("\n[5/5] Aplicando modelo para previsões...")

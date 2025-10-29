@@ -7,7 +7,7 @@ import pages
 # --- Layout da Barra de Navegação (Semelhante ao MachineLearningDashboard) ---
 navegacao = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Mapa Interativo", href="/mapa")),
+        dbc.NavItem(dbc.NavLink("Previsão de 2026", href="/mapa")),
         dbc.NavItem(dbc.NavLink("Grafos por Ano", href="/grafos")),
         dbc.NavItem(dbc.NavLink("Início", href="/")),
     ],
@@ -28,7 +28,7 @@ app.layout = html.Div([
 # --- Callback de Roteamento ---
 @app.callback(
     Output('conteudo', 'children'),
-    [Input('url', 'pathname')]
+    Input('url', 'pathname')
 )
 def render_page_content(pathname):
     if pathname == "/":

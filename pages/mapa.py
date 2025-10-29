@@ -1,65 +1,39 @@
 from dash import dcc, html
-from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
-from app import app # Importar a instância do Dash
-from data.connection import connection # Importar a função de conexão de dados
 
-# DataFrame principal
-df = connection()
+# Carregando o CSV de previsão
+df_previsao = pd.read_csv('data/treated_db/previsao_2026.csv')
+df_previsao['Data'] = pd.to_datetime(df_previsao['Data'])
 
-layout = dbc.Container([
-    html.H3("Mapa Interativo", className="text-center my-4"),
-    html.Div([
-        html.H4("Filtrar por Data"),
-        dcc.DatePickerRange(
-            id='date-range-slider',
-            min_date_allowed=df['Data'].min(),
-            max_date_allowed=df['Data'].max(),
-            start_date=df['Data'].min(),
-            end_date=df['Data'].max(),
-        ),
-    ], className="mb-4"),
-    dcc.Graph(id='forest_burn_map')
-], fluid=True)
+# Criar coluna apenas com a data formatada (sem hora)
+df_previsao['DataHora'] = df_previsao['Data'].dt.date
 
-# Callback para atualizar o mapa (o mesmo que estava no seu app.py)
-@app.callback(
-    Output('forest_burn_map', 'figure'),
-    Input('date-range-slider', 'start_date'),
-    Input('date-range-slider', 'end_date')
+# Criar o mapa
+fig = px.scatter_map(
+    df_previsao,
+    lat="Latitude",
+    lon="Longitude",
+    color="RiscoFogo",
+    color_continuous_scale=px.colors.sequential.Turbo,
+    hover_name="Estado",
+    hover_data={
+        "Municipio": True,
+        "DataFormatada": True,
+        "DiaSemChuva": True,
+        "Precipitacao": True,
+        "FRP": True,
+        "Latitude": False,
+        "Longitude": False
+    },
+    map_style="carto-positron",
+    zoom=4,
+    title="Previsão de Risco de Fogo no Cerrado - 2026"
 )
-def update_map(start_date, end_date):
-    # ... (seu código original do callback update_map)
-    # Certifique-se de incluir todas as importações necessárias (como `plotly.express as px`)
-    # ...
-    if not start_date or not end_date:
-        return {} 
 
-    start = pd.to_datetime(start_date).date()
-    end = pd.to_datetime(end_date).date()
-
-    filtered_df = df[(df['Data'] >= start) & (df['Data'] <= end)]
-
-    fig = px.scatter_map(
-        filtered_df,
-        lat="Latitude",      
-        lon="Longitude",    
-        color="RiscoFogo",
-        color_continuous_scale=px.colors.sequential.Turbo,
-        hover_name="Estado",
-        hover_data={
-            "Municipio": True,
-            "DataHora": True,
-            "DiaSemChuva": True,
-            "Precipitacao": True,
-            "FRP": True,
-            "Latitude": False,
-            "Longitude": False
-        },
-        map_style="carto-positron",
-        zoom=4
-    )
-    
-    return fig
+# Layout da página
+layout = dbc.Container([
+    html.H3("Previsão de Queimadas no Cerrado - 2026", className="text-center my-4"),
+    dcc.Graph(figure=fig, style={'height': '80vh'})
+], fluid=True)

@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 
 # Substitua pelo caminho correto do arquivo CSV (certifique-se de que é o de 365 dias ou 90 dias conforme deseja)
-file_path = "previsao_2026_inteligente.csv"
+file_path = "previsao_2026.csv"
 
 # Carregar como texto para tratar possíveis linhas de cabeçalho repetidas
 try:
@@ -54,6 +54,8 @@ fig = px.scatter_mapbox(
     color_continuous_scale=px.colors.sequential.Turbo,
     hover_name="Data",
     hover_data={
+        "Estado": True,
+        "Municipio": True,
         "RiscoFogo": True,
         "DiaSemChuva": True,
         "Precipitacao": True,
