@@ -20,7 +20,7 @@ fig = px.scatter_map(
     hover_name="Estado",
     hover_data={
         "Municipio": True,
-        "DataFormatada": True,
+        "DataHora": True,
         "DiaSemChuva": True,
         "Precipitacao": True,
         "FRP": True,

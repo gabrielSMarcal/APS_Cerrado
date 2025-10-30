@@ -8,6 +8,7 @@ import pages
 navegacao = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Previsão de 2026", href="/mapa")),
+        dbc.NavItem(dbc.NavLink("Estrutura de Dados", href="/dados")),
         dbc.NavItem(dbc.NavLink("Grafos por Ano", href="/grafos")),
         dbc.NavItem(dbc.NavLink("Início", href="/")),
     ],
@@ -40,6 +41,9 @@ def render_page_content(pathname):
     elif pathname == "/grafos":
         # Retorna o layout da página de grafos
         return pages.grafos.layout
+    elif pathname == "/dados":
+        # Retorna o layout da página de dados
+        return pages.dados.layout
     
     # Página não encontrada (404)
     return html.Div(

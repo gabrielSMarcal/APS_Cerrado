@@ -22,11 +22,12 @@ layout = dbc.Container([
             options=opcoes_anos,
             value=valor_padrao,
             clearable=False,
+            searchable=False,
             style={'width': '50%', 'margin': 'auto'}
         ),
     ], className="mb-4 text-center"),
     html.Br(),
-    dcc.Graph(id='grafo-ano')
+    dcc.Graph(id='grafo-ano', style={'height': '65vh'})
 ], fluid=True)
 
 # Callback para atualizar o grafo (o mesmo que estava no seu app.py)
