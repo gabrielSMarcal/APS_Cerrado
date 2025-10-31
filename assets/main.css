@@ -1,1 +1,181 @@
 /* Parte do Pan */
+
+body {
+  background-color: #fcfce0;
+  color: #2b2d42;
+  font-family: 'Poppins', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  color: #000000;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  
+}
+
+h1 {
+  font-size: 2.7rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Montserrat', sans-serif; 
+}
+
+p.text-center {
+  max-width: 720px;
+  margin: 0 auto;
+  color: #373737;
+  font-size: 0.9rem;
+}
+
+h3.text-center.my-4 {
+    font-size: 2rem;
+    font-family: 'Arial', sans-serif ;
+}
+
+h4 {
+  color: #474747;
+  font-size: 1.4rem;
+  font-weight: 300;
+}
+
+/* Navbar */
+.navbar {
+  background-color: #35434d !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand,
+.navbar .nav-link {
+  color: #f3f5f7 !important;
+  font-weight: 500;
+}
+
+.navbar .nav-link {
+  margin: 0 10px;
+  transition: color 0.3s ease, opacity 0.3s ease;
+  opacity: 0.9;
+}
+
+.navbar .nav-link:hover {
+  color: #e76f51 !important;
+  opacity: 1;
+}
+
+.fade.mt-4.alert.alert-success.show {
+    color: #2a9d8f;
+    background-color: #35434d;
+}
+
+/* Botões */
+.btn-primary {
+  background-color: #2a9d8f;
+  border-color: #2a9d8f;
+}
+.btn-primary:hover {
+  background-color: #23867f;
+  border-color: #23867f;
+}
+
+/* Alertas */
+.alert {
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  border: none;
+  font-size: 15px;
+}
+
+.alert-success {
+  background-color: #2a9d8f30;
+  color: #0c6f68;
+}
+
+.dash-debug-menu__button--selected.dash-debug-menu__button {
+    color: #2a9d8f;
+}
+
+.dash-debug-menu__button--selected.dash-debug-menu__button:hover {
+    color: #2a9d8f;
+}
+
+.dash-debug-menu__toggle.dash-debug-menu__toggle--expanded {
+    color: #2a9d8f;
+}
+
+.dash-debug-menu__toggle.dash-debug-menu__toggle--expanded:hover {
+    color: #2a9d8f;
+}
+
+.dash-debug-menu__toggle.dash-debug-menu__toggle--collapsed {
+    color: #2a9d8f;
+}
+
+.dash-debug-menu__toggle.dash-debug-menu__toggle--collapsed:hover {
+    color: #2a9d8f;
+}
+
+/* Cartões e gráficos */
+.card, .dash-graph, .js-plotly-plot, .leaflet-container {
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+  padding: 0.5rem;
+}
+
+/* Tabelas */
+.table {
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.table thead th {
+  color: #445266;
+  font-weight: 600;
+  border-bottom: none;
+}
+
+/* Links */
+a {
+  color: #e76f51;
+  text-decoration: none;
+}
+a:hover {
+  color: #c8553f;
+  text-decoration: none;
+}
+
+/* Sombras suaves */
+.shadow-soft {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+  .navbar .navbar-brand {
+    font-size: 1.05rem;
+  }
+  .navbar .nav-link {
+    margin: 0 5px;
+  }
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+  .container, .container-fluid {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* Título com gradiente opcional */
+.hero-title {
+  background: linear-gradient(90deg, #e76f51, #2a9d8f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
