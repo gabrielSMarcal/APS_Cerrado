@@ -1,4 +1,4 @@
-from dash import dcc, html, Output, Input, State
+from dash import dcc, html, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 
 from app import app
@@ -7,10 +7,7 @@ from models.mapa_interativo import MapaInterativo
 # Carregando o CSV de previsão
 mapa = MapaInterativo('data/treated_db/previsao_2026.csv')
 
-estados_df = mapa.carregar_estados()
-
-# Criar coluna apenas com a data formatada (sem hora)
-estados_df['DataHora'] = estados_df['Data'].dt.date
+estados_df = mapa.obter_estados_disponiveis()
 
 # Criar o mapa
 layout = dbc.Container([
@@ -81,10 +78,10 @@ layout = dbc.Container([
      Output('painel-estatisticas', 'children'),
      Output('btn-todos-estados', 'color'),
      Output('btn-todos-estados', 'outline'),
-     Output({'type': 'btn-estado', 'index': dbc.ALL}, 'color'),
-     Output({'type': 'btn-estado', 'index': dbc.ALL}, 'outline')],
+     Output({'type': 'btn-estado', 'index': ALL}, 'color'),
+     Output({'type': 'btn-estado', 'index': ALL}, 'outline')],
     [Input('btn-todos-estados', 'n_clicks'),
-     Input({'type': 'btn-estado', 'index': dbc.ALL}, 'n_clicks')],
+     Input({'type': 'btn-estado', 'index': ALL}, 'n_clicks')],
     prevent_initial_call=False
 )
 def atualizar_mapa(n_clicks_geral, n_clicks_estados):

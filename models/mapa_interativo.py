@@ -88,7 +88,7 @@ class MapaInterativo:
             Tuple contendo (latitude, longitude, zoom)
         '''
         
-        if self.__estado_selecionado and self.__estadio_selecionado in self.COORDENADAS_ESTADOS:
+        if self.__estado_selecionado and self.__estado_selecionado in self.COORDENADAS_ESTADOS:
             return self.COORDENADAS_ESTADOS[self.__estado_selecionado]
         else:
             # Coordenadas padrão do Brasil
@@ -183,7 +183,7 @@ class MapaInterativo:
         '''
 
         if self.__figura_cache is None or force_refresh:
-            self.__figura_cache = self.__gerar_figura()
+            self.__figura_cache = self.__gerar_figuras()
 
         return self.__figura_cache
     
@@ -194,7 +194,7 @@ class MapaInterativo:
         
         return sorted(self.__df_original['Estado'].unique().tolist())
     
-    def obter_estatistica(self) -> Dict:
+    def obter_estatisticas(self) -> Dict:
         '''
         Retorna estatísticas básicas do DataFrame filtrado.
         
