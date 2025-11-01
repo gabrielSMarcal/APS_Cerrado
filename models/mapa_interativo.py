@@ -2,8 +2,6 @@ import pandas as pd
 import plotly.express as px
 from typing import Optional, Dict, List, Tuple
 
-from scipy import stats
-
 class MapaInterativo:
     '''
     Classe para gerenciar mapa interativo de previsão de queimadas no Cerrado.
@@ -218,18 +216,19 @@ class MapaInterativo:
         
         return {
             'total_registros': total,
-            'municipios': df['Municipio'].nunique(),
-            risco_baixo: {
+            'municipios_unicos': df['Municipio'].nunique(),
+            'estado_filtrado': self.__estado_selecionado,
+            'risco_baixo': {
                 'quantidade': risco_baixo,
                 'percentual': perc_baixo,
                 'descricao': 'Possível incêndio criminoso'
             },
-            risco_medio: {
+            'risco_medio': {
                 'quantidade': risco_medio,
                 'percentual': perc_medio,
                 'descricao': 'Situação intermediária'
             },
-            risco_alto: {
+            'risco_alto': {
                 'quantidade': risco_alto,
                 'percentual': perc_alto,
                 'descricao': 'Possível incêndio natural'
@@ -286,11 +285,14 @@ class MapaInterativo:
         '''
         String descritiva da classe.
         '''
+        stats = self.obter_estatisticas()
         
         return (
             f'Mapa Interativo de Queimadas\n'
-            f'  Estado: {stats['estado_filtrado'] or 'Todos'}\n'
-            f'  Registros: {stats['total_registros']}\n'
-            f'  Municípios: {stats['municipios_unicos']}\n'
-            f'  Risco Médio: {stats['risco_medio']:.2f}'
+            f"  Estado: {stats['estado_filtrado'] or 'Todos'}\n"
+            f"  Registros: {stats['total_registros']}\n"
+            f"  Municípios: {stats['municipios_unicos']}\n"
+            f"  Risco Baixo: {stats['risco_baixo']['quantidade']} ({stats['risco_baixo']['percentual']:.1f}%)\n"
+            f"  Risco Médio: {stats['risco_medio']['quantidade']} ({stats['risco_medio']['percentual']:.1f}%)\n"
+            f"  Risco Alto: {stats['risco_alto']['quantidade']} ({stats['risco_alto']['percentual']:.1f}%)"
         )
