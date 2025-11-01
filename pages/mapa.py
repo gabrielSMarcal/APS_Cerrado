@@ -9,6 +9,22 @@ mapa = MapaInterativo('data/treated_db/previsao_2026.csv')
 
 estados_df = mapa.obter_estados_disponiveis()
 
+# Mapeamento de estados para siglas
+ESTADOS_SIGLAS = {
+    'BAHIA': 'BA',
+    'DISTRITO FEDERAL': 'DF',
+    'GOIÁS': 'GO',
+    'MARANHÃO': 'MA',
+    'MATO GROSSO': 'MT',
+    'MATO GROSSO DO SUL': 'MS',
+    'MINAS GERAIS': 'MG',
+    'PARANÁ': 'PR',
+    'PIAUÍ': 'PI',
+    'RONDÔNIA': 'RO',
+    'SÃO PAULO': 'SP',
+    'TOCANTINS': 'TO'
+}
+
 # Criar o mapa
 layout = dbc.Container([
     # Título da página
@@ -16,7 +32,7 @@ layout = dbc.Container([
     
     # Container principal com layout de duas colunas
     dbc.Row([
-        # Coluna lateral - Filtros
+        # Coluna lateral - Filtros (reduzida)
         dbc.Col([
             html.Div([
                 # Título da seção de filtros
@@ -24,54 +40,60 @@ layout = dbc.Container([
                 
                 # Botão para visualização geral (todos os estados)
                 dbc.Button(
-                    "🌎 Visualização Geral",
+                    "🇧🇷 Brasil",
                     id="btn-todos-estados",
                     color="primary",
                     className="w-100 mb-3",
-                    size="lg"
+                    size="sm"
                 ),
                 
                 html.Hr(),
                 
                 # Título da lista de estados
-                html.H6("Selecione um Estado:", className="text-center mb-2"),
+                html.H6("Estados:", className="text-center mb-2"),
                 
-                # Lista de botões para cada estado
+                # Lista de botões para cada estado (com siglas)
                 html.Div([
                     dbc.Button(
-                        estado,
+                        ESTADOS_SIGLAS.get(estado, estado[:2]),
                         id={'type': 'btn-estado', 'index': estado},
                         color="secondary",
                         outline=True,
-                        className="w-100 mb-2",
-                        size="sm"
+                        className="w-100 mb-1",
+                        size="sm",
+                        style={'fontSize': '0.85rem', 'padding': '0.25rem'}
                     ) for estado in estados_df
-                ]),
-                
-                html.Hr(),
-                
-                # Painel de estatísticas
-                html.H6("Estatísticas:", className="text-center mb-2"),
-                html.Div(id='painel-estatisticas', className="p-3 bg-light rounded")
+                ])
                 
             ], className="sticky-top", style={'top': '20px'})
-        ], width=3, className="pe-3"),
+        ], width=1, className="pe-2"),
         
-        # Coluna principal - Mapa
+        # Coluna principal - Mapa e Estatísticas
         dbc.Col([
-            dcc.Graph(
-                id='mapa-queimadas',
-                figure=mapa.obter_figura(),
-                style={'height': '85vh'}
-            )
-        ], width=9)
+            dbc.Row([
+                # Mapa - 80% da largura
+                dbc.Col([
+                    dcc.Graph(
+                        id='mapa-queimadas',
+                        figure=mapa.obter_figura(),
+                        style={'height': '85vh'}
+                    )
+                ], width=9),
+                
+                # Estatísticas - 20% da largura
+                dbc.Col([
+                    html.Div([
+                        html.H5("Estatísticas", className="text-center mb-3"),
+                        html.Div(id='painel-estatisticas', className="p-3 bg-light rounded")
+                    ], className="sticky-top", style={'top': '20px'})
+                ], width=3)
+            ])
+        ], width=11)
     ])
 ], fluid=True, className="px-4")
 
 
-# ============================================================================
 # CALLBACKS
-# ============================================================================
 
 @app.callback(
     [Output('mapa-queimadas', 'figure'),
@@ -145,79 +167,79 @@ def atualizar_mapa(n_clicks_geral, n_clicks_estados):
         html.P([
             html.Strong("Estado: "),
             stats['estado_filtrado'] or "Todos"
-        ], className="mb-1"),
+        ], className="mb-1", style={'fontSize': '0.9rem'}),
         html.P([
             html.Strong("Registros: "),
             f"{stats['total_registros']:,}"
-        ], className="mb-1"),
+        ], className="mb-1", style={'fontSize': '0.9rem'}),
         html.P([
             html.Strong("Municípios: "),
             f"{stats['municipios_unicos']}"
-        ], className="mb-2"),
+        ], className="mb-2", style={'fontSize': '0.9rem'}),
         
         html.Hr(className="my-2"),
         
         # Classificação de Risco
-        html.H6("📈 Classificação de Risco", className="text-center mb-2"),
+        html.H6("📈 Risco", className="text-center mb-2", style={'fontSize': '0.95rem'}),
         
-        # Risco Baixo (0-30) - Possível incêndio criminoso
+        # Risco Baixo (0-20) - Possível incêndio criminoso
         html.Div([
             html.P([
-                html.Span("🟢 ", style={'fontSize': '1.2em'}),
-                html.Strong("Baixo (0-30)")
-            ], className="mb-0", style={'color': '#28a745'}),
+                html.Span("🔴 ", style={'fontSize': '1em'}),
+                html.Strong("Baixo (0-20)")
+            ], className="mb-0", style={'color': '#dc3545', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_baixo']['descricao'],
                 className="mb-0",
-                style={'fontSize': '0.75em', 'fontStyle': 'italic', 'marginLeft': '1.5em'}
+                style={'fontSize': '0.7em', 'fontStyle': 'italic', 'marginLeft': '1.2em'}
             ),
             html.P([
-                f"{stats['risco_baixo']['quantidade']:,} registros ",
+                f"{stats['risco_baixo']['quantidade']:,} ",
                 html.Span(
                     f"({stats['risco_baixo']['percentual']:.1f}%)",
                     style={'fontWeight': 'bold'}
                 )
-            ], className="mb-2", style={'marginLeft': '1.5em'})
+            ], className="mb-2", style={'marginLeft': '1.2em', 'fontSize': '0.8rem'})
         ]),
         
-        # Risco Médio (31-70)
+        # Risco Médio (21-70)
         html.Div([
             html.P([
-                html.Span("🟡 ", style={'fontSize': '1.2em'}),
-                html.Strong("Médio (31-70)")
-            ], className="mb-0", style={'color': '#ffc107'}),
+                html.Span("🟡 ", style={'fontSize': '1em'}),
+                html.Strong("Médio (21-70)")
+            ], className="mb-0", style={'color': '#ffc107', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_medio']['descricao'],
                 className="mb-0",
-                style={'fontSize': '0.75em', 'fontStyle': 'italic', 'marginLeft': '1.5em'}
+                style={'fontSize': '0.7em', 'fontStyle': 'italic', 'marginLeft': '1.2em'}
             ),
             html.P([
-                f"{stats['risco_medio']['quantidade']:,} registros ",
+                f"{stats['risco_medio']['quantidade']:,} ",
                 html.Span(
                     f"({stats['risco_medio']['percentual']:.1f}%)",
                     style={'fontWeight': 'bold'}
                 )
-            ], className="mb-2", style={'marginLeft': '1.5em'})
+            ], className="mb-2", style={'marginLeft': '1.2em', 'fontSize': '0.8rem'})
         ]),
         
         # Risco Alto (71-100) - Possível incêndio natural
         html.Div([
             html.P([
-                html.Span("🔴 ", style={'fontSize': '1.2em'}),
+                html.Span("🟢 ", style={'fontSize': '1em'}),
                 html.Strong("Alto (71-100)")
-            ], className="mb-0", style={'color': '#dc3545'}),
+            ], className="mb-0", style={'color': '#28a745', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_alto']['descricao'],
                 className="mb-0",
-                style={'fontSize': '0.75em', 'fontStyle': 'italic', 'marginLeft': '1.5em'}
+                style={'fontSize': '0.7em', 'fontStyle': 'italic', 'marginLeft': '1.2em'}
             ),
             html.P([
-                f"{stats['risco_alto']['quantidade']:,} registros ",
+                f"{stats['risco_alto']['quantidade']:,} ",
                 html.Span(
                     f"({stats['risco_alto']['percentual']:.1f}%)",
                     style={'fontWeight': 'bold'}
                 )
-            ], className="mb-0", style={'marginLeft': '1.5em'})
+            ], className="mb-0", style={'marginLeft': '1.2em', 'fontSize': '0.8rem'})
         ])
     ])
     

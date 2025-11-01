@@ -104,30 +104,29 @@ class MapaInterativo:
             titulo = f'Previsão de Risco de Fogo em Cerrado no estado de {self.__estado_selecionado} - 2026'
         else:
             titulo = 'Previsão de Risco de Fogo no Cerrado - 2026'
-            
+        
+        # Criar uma cópia do DataFrame filtrado para manipulação
+        df_plot = self.__df_filtrado.copy()
         
         # Garantir que a coluna DataHora contenha apenas a data (sem horário) como string
-        if 'Data' in self.__df_filtrado.columns:
-            self.__df_filtrado['DataHora'] = pd.to_datetime(self.__df_filtrado['Data']).dt.strftime('%Y-%m-%d')
-        elif 'DataHora' in self.__df_filtrado.columns:
-            self.__df_filtrado['DataHora'] = pd.to_datetime(self.__df_filtrado['DataHora']).dt.strftime('%Y-%m-%d')
+        df_plot['DataHora'] = pd.to_datetime(df_plot['Data']).dt.strftime('%Y-%m-%d')
 
-        # Criar o mapa
+        # Criar o mapa usando o DataFrame copiado
         fig = px.scatter_map(
-            self.__df_filtrado,
+            df_plot,
             lat='Latitude',
             lon='Longitude',
             color='RiscoFogo',
             color_continuous_scale=px.colors.sequential.Turbo,
             hover_name='Estado',
             hover_data={
-            'Municipio': True,
-            'DataHora': True,
-            'DiaSemChuva': True,
-            'Precipitacao': True,
-            'FRP': True,
-            'Latitude': False,
-            'Longitude': False
+                'Municipio': True,
+                'DataHora': True,
+                'DiaSemChuva': True,
+                'Precipitacao': True,
+                'FRP': True,
+                'Latitude': False,
+                'Longitude': False
             },
             map_style='carto-positron',
             zoom=zoom,
@@ -167,11 +166,16 @@ class MapaInterativo:
                     f'Estado "{estado}" inválido.'
                     f' Escolha entre: {", ".join(self.ESTADOS_CERRADO)}'
                 )
-            
+        
             # Aplicar filtro
+            self.__df_filtrado = self.__df_original[self.__df_original['Estado'] == estado].copy()
+            
+            # Garantir que DataHora seja recalculado após o filtro
+            self.__df_filtrado['DataHora'] = pd.to_datetime(self.__df_filtrado['Data']).dt.date
+            
             self.__estado_selecionado = estado
             self.__figura_cache = None
-            
+
     def obter_figura(self, force_refresh: bool = False) -> px.scatter_map:
         '''
         Obtém a figura do mapa interativo.
@@ -197,15 +201,15 @@ class MapaInterativo:
         Retorna estatísticas básicas do DataFrame filtrado.
         
         Classificação do RiscoFogo:
-            - Baixo: 00-30
+            - Baixo: 00-20
             - Médio: 31-70
             - Alto:  71-100
         '''
 
         df = self.__df_filtrado
         
-        risco_baixo = len(df[df['RiscoFogo'] <= 30])
-        risco_medio = len(df[(df['RiscoFogo'] > 30) & (df['RiscoFogo'] <= 70)])
+        risco_baixo = len(df[df['RiscoFogo'] <= 20])
+        risco_medio = len(df[(df['RiscoFogo'] > 20) & (df['RiscoFogo'] <= 70)])
         risco_alto = len(df[df['RiscoFogo'] > 70])
         
         # Calcular percentuais
