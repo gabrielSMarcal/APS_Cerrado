@@ -41,6 +41,12 @@ def gerar_lista_grafos():
             title=f"Risco de Fogo - {ano}"
         )
         
+        # Centralizar o título
+        fig.update_layout(
+            title_x=0.5,
+            title_xanchor='center'
+        )
+        
         grafos.append({
             'ano': int(ano) if ano != 'Desconhecido' else ano,
             'figura': fig,
