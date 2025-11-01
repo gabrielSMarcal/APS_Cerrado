@@ -37,3 +37,5 @@ layout = dbc.Container([
     html.H3("Previsão de Queimadas no Cerrado - 2026", className="text-center my-4"),
     dcc.Graph(figure=fig, style={'height': '80vh'})
 ], fluid=True)
+
+# 
