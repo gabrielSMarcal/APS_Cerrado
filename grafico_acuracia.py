@@ -12,10 +12,9 @@ import matplotlib.pyplot as plt
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# imports do seu projeto: ajustar se os caminhos forem diferentes
 from cluster.cluster_utils import preparar_dados
 from cluster.cluster_predicao import treinar_modelo  # necessário se modelo não existir
-from data.connection import connection  # deve retornar DataFrame com colunas Data, Latitude, Longitude, Estado, Municipio, RiscoFogo
+from data.connection import connection 
 
 import folium
 from folium.plugins import MarkerCluster, HeatMap
@@ -176,8 +175,8 @@ def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
     """
     Gera mapa Folium apenas para o ano de 2025 mostrando:
       - ACERTO (verde)
-      - SOBRE-estimativa (laranja)
-      - SUB-estimativa (vermelho)
+      - SOBRE-estimativa ACIMA (laranja)
+      - SUB-estimativa BAIXO (vermelho)
     Salva mapa_2025_acertos_erros.html
     """
     df_2025 = df_eval[df_eval['Ano'] == 2025].copy()
@@ -223,28 +222,50 @@ def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
     print("Mapa 2025 salvo:", map_path)
     return map_path
 
-def gerar_heatmap_erro(df_eval, out_dir=OUT_DIR):
-    heat_points = df_eval[['Latitude', 'Longitude', 'RiscoFogo', 'Risco_pred']].dropna().copy()
-    heat_points['erro_abs'] = (heat_points['RiscoFogo'] - heat_points['Risco_pred']).abs()
+def carregar_dados_csvs(pasta_csvs):
+    import re
+    arquivos = [os.path.join(pasta_csvs, f) for f in os.listdir(pasta_csvs) if f.endswith('.csv')]
+    dfs = []
+    for arq in arquivos:
+        df = pd.read_csv(arq)
+        # garante que a coluna Data é datetime
+        df['DataHora'] = pd.to_datetime(df['DataHora'], errors='coerce')
+        # extrai o ano
+        df['Ano'] = df['DataHora'].dt.year
+        dfs.append(df)
+    return pd.concat(dfs, ignore_index=True)
 
-    if heat_points.empty:
+def gerar_heatmap(df, ano=None, saida=None):
+    df_map = df.copy()
+    if ano:
+        df_map = df_map[df_map['Ano'] == ano]
+        if df_map.empty:
+            print(f"Nenhum dado para o ano {ano}")
+            return None
+
+    df_map = df_map.dropna(subset=['Latitude', 'Longitude', 'RiscoFogo'])
+    if df_map.empty:
+        print("Nenhum dado válido com Latitude, Longitude e RiscoFogo")
         return None
 
-    max_err = heat_points['erro_abs'].max()
-    weights = (heat_points['erro_abs'] / max_err).tolist() if max_err > 0 else [0.0]*len(heat_points)
-    heat_data = [[row['Latitude'], row['Longitude'], w] for (_, row), w in zip(heat_points.iterrows(), weights)]
-    center = [heat_points['Latitude'].median(), heat_points['Longitude'].median()]
+    df_map['peso'] = df_map['RiscoFogo'] / df_map['RiscoFogo'].max()
 
-    m_heat = folium.Map(location=center, zoom_start=5, tiles='CartoDB Positron')
-    HeatMap(heat_data, radius=10, blur=12, max_zoom=6).add_to(m_heat)
+    center = [df_map['Latitude'].median(), df_map['Longitude'].median()]
+    mapa = folium.Map(location=center, zoom_start=5, tiles='CartoDB Positron')
 
-    heat_path = os.path.join(out_dir, 'heatmap_erro_agregado.html')
-    m_heat.save(heat_path)
-    return heat_path
+    heat_data = df_map[['Latitude', 'Longitude', 'peso']].values.tolist()
+    HeatMap(heat_data, radius=10, blur=12, max_zoom=6).add_to(mapa)
+
+    if saida is None:
+        saida = os.path.join(OUT_DIR, f'heatmap_{ano if ano else "todos_anos"}.html')
+
+    mapa.save(saida)
+    print(f"Heatmap salvo em: {saida}")
+    return saida
 
 # ---------------- Execução principal ----------------
 
-if __name__ == '__main__':
+'''if __name__ == '__main__':
     print("Iniciando avaliação e geração de gráficos...")
 
     modelo_cluster = carregar_modelo_ou_treinar(MODEL_PATH)
@@ -263,8 +284,11 @@ if __name__ == '__main__':
     # Gerar apenas mapa de 2025
     map_2025 = gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=SAMPLE_MAP)
 
-    heat_path = gerar_heatmap_erro(df_eval, out_dir=OUT_DIR)
+    pasta_salvar = 'data/base_db' 
+    pasta_executar = carregar_dados_csvs(pasta_salvar)
+    heat_2021 = gerar_heatmap(pasta_executar,ano=2021)
 
     print("\nProcesso finalizado. Arquivos em:", OUT_DIR)
     print("Mapa 2025 gerado:", map_2025)
-    print("Heatmap:", heat_path)
+    print("Heatmap:", heat_2021)
+'''
