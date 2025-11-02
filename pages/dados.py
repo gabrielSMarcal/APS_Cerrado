@@ -23,14 +23,35 @@ layout = dbc.Container([
         ], width=12)
     ]),
     
-    # Seção de métricas resumidas
+    # Seção de explicação do modelo
     dbc.Row([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("Métricas de Avaliação", className="card-title text-center"),
-                    html.P("Análise do desempenho do modelo de Machine Learning", 
-                           className="text-muted text-center")
+                    html.H4("📊 Sobre o Modelo de Previsão", className="card-title mb-3"),
+                    html.P([
+                        "O modelo utiliza técnicas de ",
+                        html.Strong("Clustering (K-means com k=12)"),
+                        " para agrupar anos com meses similares e prever o risco de incêndios no Cerrado Brasileiro. "
+                        "A análise considera múltiplas variáveis ambientais e temporais, incluindo:"
+                    ], className="mb-2"),
+                    html.Ul([
+                        html.Li("Dados históricos de focos de incêndio (INPE)"),
+                        html.Li("Variáveis climáticas (temperatura, precipitação, umidade)"),
+                        html.Li("Índices de vegetação e uso do solo"),
+                        html.Li("Padrões temporais e sazonais"),
+                    ], className="mb-3"),
+                    html.P([
+                        "O desempenho é avaliado através de métricas como ",
+                        html.Strong("MAE (Mean Absolute Error)"),
+                        ", ",
+                        html.Strong("RMSE (Root Mean Square Error)"),
+                        ", ",
+                        html.Strong("R² (Coeficiente de Determinação)"),
+                        " e ",
+                        html.Strong("Acurácia com margem de erro"),
+                        "."
+                    ], className="text-muted")
                 ])
             ], className="mb-4 shadow-sm")
         ], width=12)
@@ -39,7 +60,7 @@ layout = dbc.Container([
     # Seletor de ano
     dbc.Row([
         dbc.Col([
-            html.Label("Selecione o Ano:", className="fw-bold"),
+            html.Label("Selecione o Ano para Análise:", className="fw-bold"),
             dcc.Dropdown(
                 id='ano-dropdown',
                 placeholder="Selecione um ano...",
@@ -49,6 +70,70 @@ layout = dbc.Container([
             )
         ], width=12, md=4)
     ]),
+    
+    # Heatmap do ano selecionado
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("🗺️ Mapa de Calor - Risco de Fogo", className="card-title mb-3"),
+                    html.P(
+                        "Visualização geoespacial do risco de incêndio previsto pelo modelo. "
+                        "Cores mais quentes indicam maior risco.",
+                        className="text-muted small mb-3"
+                    ),
+                    html.Div(id='heatmap-container')
+                ])
+            ], className="shadow-sm")
+        ], width=12)
+    ], className="mb-4"),
+    
+    # Explicação das métricas
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("ℹ️ Entendendo as Métricas", className="card-title mb-3"),
+                    dbc.Row([
+                        dbc.Col([
+                            html.H6("MAE (Mean Absolute Error)", className="text-primary"),
+                            html.P(
+                                "Média das diferenças absolutas entre valores preditos e reais. "
+                                "Valores menores indicam melhor desempenho.",
+                                className="small"
+                            )
+                        ], width=12, md=6),
+                        dbc.Col([
+                            html.H6("RMSE (Root Mean Square Error)", className="text-warning"),
+                            html.P(
+                                "Raiz quadrada da média dos erros ao quadrado. "
+                                "Penaliza erros maiores mais fortemente que o MAE.",
+                                className="small"
+                            )
+                        ], width=12, md=6)
+                    ]),
+                    dbc.Row([
+                        dbc.Col([
+                            html.H6("R² (Coeficiente de Determinação)", className="text-success mt-2"),
+                            html.P(
+                                "Indica quanto da variação dos dados é explicada pelo modelo. "
+                                "Varia de 0 a 1, onde 1 é perfeito.",
+                                className="small"
+                            )
+                        ], width=12, md=6),
+                        dbc.Col([
+                            html.H6("Acurácia (±10)", className="text-info mt-2"),
+                            html.P(
+                                "Porcentagem de predições que ficaram dentro de uma margem "
+                                "de erro de ±10 unidades do valor real.",
+                                className="small"
+                            )
+                        ], width=12, md=6)
+                    ])
+                ])
+            ], className="shadow-sm")
+        ], width=12)
+    ], className="mb-5"),
     
     # Cards com métricas principais
     dbc.Row([
@@ -93,13 +178,16 @@ layout = dbc.Container([
         ], width=12, md=3)
     ], className="mb-4"),
     
-    
     # Gráficos de métricas
     dbc.Row([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("Evolução das Métricas por Ano", className="card-title"),
+                    html.H5("📈 Evolução das Métricas por Ano", className="card-title"),
+                    html.P(
+                        "Acompanhe como o erro médio do modelo varia ao longo dos anos.",
+                        className="text-muted small"
+                    ),
                     dcc.Graph(
                         id='graph-metricas-ano',
                         style={'height': '400px'},
@@ -112,7 +200,11 @@ layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("Acurácia por Margem", className="card-title"),
+                    html.H5("🎯 Acurácia por Margem", className="card-title"),
+                    html.P(
+                        "Porcentagem de predições dentro de uma margem de erro aceitável (±10).",
+                        className="text-muted small"
+                    ),
                     dcc.Graph(
                         id='graph-acuracia-margem',
                         style={'height': '400px'},
@@ -123,30 +215,22 @@ layout = dbc.Container([
         ], width=12, lg=6)
     ], className="mb-4"),
     
-    # Heatmap do ano selecionado
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("Heatmap de Risco de Fogo", className="card-title mb-3"),
-                    html.Div(id='heatmap-container')
-                ])
-            ], className="shadow-sm")
-        ], width=12)
-    ], className="mb-4"),
-    
     # Tabela de métricas detalhadas
     dbc.Row([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("Métricas Detalhadas por Ano", className="card-title"),
+                    html.H5("📋 Métricas Detalhadas por Ano", className="card-title"),
+                    html.P(
+                        "Tabela completa com todas as métricas de desempenho do modelo.",
+                        className="text-muted small mb-3"
+                    ),
                     html.Div(id='tabela-metricas')
                 ])
             ], className="shadow-sm")
         ], width=12)
     ], className="mb-5")
-    
+        
 ], fluid=True, className="py-3")
 
 
@@ -252,24 +336,32 @@ def update_graph_metricas(dados_carregados):
             y=df['MAE'], 
             mode='lines+markers', 
             name='MAE', 
-            line=dict(color='#3498db', width=2)
+            line=dict(color='#3498db', width=2),
+            marker=dict(size=8)
         ))
         fig.add_trace(go.Scatter(
             x=df['Ano'], 
             y=df['RMSE'], 
             mode='lines+markers', 
             name='RMSE', 
-            line=dict(color='#f39c12', width=2)
+            line=dict(color='#f39c12', width=2),
+            marker=dict(size=8)
         ))
         
         fig.update_layout(
-            title="MAE e RMSE por Ano",
             xaxis_title="Ano",
             yaxis_title="Erro",
             hovermode='x unified',
             template='plotly_white',
             height=400,
-            margin=dict(l=50, r=50, t=50, b=50)
+            margin=dict(l=50, r=50, t=50, b=50),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
         )
         
         return fig
@@ -338,11 +430,12 @@ def update_graph_acuracia(dados_carregados):
             mode='lines+markers',
             name='Acurácia',
             line=dict(color='#27ae60', width=3),
-            marker=dict(size=8)
+            marker=dict(size=10),
+            fill='tozeroy',
+            fillcolor='rgba(39, 174, 96, 0.1)'
         ))
         
         fig.update_layout(
-            title="Acurácia (±10) por Ano",
             xaxis_title="Ano",
             yaxis_title="Acurácia (%)",
             yaxis=dict(range=[0, 100]),
@@ -378,10 +471,13 @@ def update_graph_acuracia(dados_carregados):
 )
 def update_heatmap(ano_selecionado):
     if ano_selecionado is None:
-        return html.Div(
-            "Selecione um ano acima para visualizar o heatmap", 
-            className="text-muted text-center p-5"
-        )
+        return html.Div([
+            html.I(className="bi bi-map", style={'fontSize': '64px', 'color': '#ccc'}),
+            html.P(
+                "Selecione um ano acima para visualizar o mapa de calor", 
+                className="text-muted text-center mt-3"
+            )
+        ], className="text-center p-5")
     
     heat_path = f'avaliacao_outputs/heatmap_{ano_selecionado}.html'
     
@@ -390,13 +486,13 @@ def update_heatmap(ano_selecionado):
             heat_html = f.read()
         return html.Iframe(
             srcDoc=heat_html, 
-            style={'width': '100%', 'height': '600px', 'border': 'none'}
+            style={'width': '100%', 'height': '600px', 'border': 'none', 'borderRadius': '8px'}
         )
     
     return html.Div([
         html.I(className="bi bi-exclamation-triangle-fill text-warning", style={'fontSize': '48px'}),
         html.P(
-            f"Heatmap não disponível para o ano {ano_selecionado}", 
+            f"Mapa de calor não disponível para o ano {ano_selecionado}", 
             className="text-muted mt-3"
         )
     ], className="text-center p-5")
@@ -420,31 +516,52 @@ def update_table(dados_carregados):
         df_full = df_metrics.copy()
         df_full['accuracy_margin'] = None
     
+    # Ordenar por ano decrescente
+    df_full = df_full.sort_values('Ano', ascending=False)
+    
     # Criar tabela Bootstrap
     table_header = [
         html.Thead(html.Tr([
-            html.Th("Ano"),
-            html.Th("MAE"),
-            html.Th("RMSE"),
-            html.Th("R²"),
-            html.Th("Acurácia (%)"),
-            html.Th("Amostras")
-        ]))
+            html.Th("Ano", className="text-center"),
+            html.Th("MAE", className="text-center"),
+            html.Th("RMSE", className="text-center"),
+            html.Th("R²", className="text-center"),
+            html.Th("Acurácia (±10)", className="text-center"),
+            html.Th("Amostras", className="text-center")
+        ]), className="table-light")
     ]
     
     rows = []
     for _, row in df_full.iterrows():
         acc_val = f"{row['accuracy_margin']:.1f}%" if pd.notna(row.get('accuracy_margin')) else "-"
+        
+        # Adicionar classe de cor baseado na acurácia
+        row_class = ""
+        if pd.notna(row.get('accuracy_margin')):
+            if row['accuracy_margin'] >= 80:
+                row_class = "table-success"
+            elif row['accuracy_margin'] >= 60:
+                row_class = "table-warning"
+            else:
+                row_class = "table-danger"
+        
         rows.append(html.Tr([
-            html.Td(int(row['Ano'])),
-            html.Td(f"{row['MAE']:.2f}"),
-            html.Td(f"{row['RMSE']:.2f}"),
-            html.Td(f"{row['R2']:.3f}"),
-            html.Td(acc_val),
-            html.Td(int(row['n']))
-        ]))
+            html.Td(int(row['Ano']), className="text-center fw-bold"),
+            html.Td(f"{row['MAE']:.2f}", className="text-center"),
+            html.Td(f"{row['RMSE']:.2f}", className="text-center"),
+            html.Td(f"{row['R2']:.3f}", className="text-center"),
+            html.Td(acc_val, className="text-center fw-bold"),
+            html.Td(f"{int(row['n']):,}", className="text-center text-muted")
+        ], className=row_class))
     
     table_body = [html.Tbody(rows)]
     
-    return dbc.Table(table_header + table_body, bordered=True, hover=True, responsive=True, striped=True)
+    return dbc.Table(
+        table_header + table_body, 
+        bordered=True, 
+        hover=True, 
+        responsive=True, 
+        striped=True,
+        className="mb-0"
+    )
 
