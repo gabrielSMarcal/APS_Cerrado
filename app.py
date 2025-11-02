@@ -5,7 +5,7 @@ app = Dash(
     __name__,
     external_stylesheets=[
         dbc.themes.FLATLY,
-        "assets/main.css"
+        'assets/main.css'
     ],
     suppress_callback_exceptions=True
  )

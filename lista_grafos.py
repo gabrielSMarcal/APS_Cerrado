@@ -26,7 +26,7 @@ def gerar_lista_grafos():
             lon='Longitude',
             color='RiscoFogo',
             color_continuous_scale=px.colors.sequential.Turbo,
-            hover_name="Estado",
+            hover_name='Estado',
             hover_data={
                 'Municipio': True,
                 'DataHora': True,
@@ -38,7 +38,7 @@ def gerar_lista_grafos():
             },
             map_style='carto-positron',
             zoom=3,
-            title=f"Risco de Fogo - {ano}"
+            title=f'Risco de Fogo - {ano}'
         )
         
         # Centralizar o título

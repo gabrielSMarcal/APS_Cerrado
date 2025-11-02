@@ -1,9 +1,3 @@
-# avaliar_e_graficos.py
-"""
-Script para avaliar modelo e gerar gráficos PNG (matplotlib) e mapas (folium).
-Coloque este arquivo na raiz do seu projeto e rode: python avaliar_e_graficos.py
-"""
-
 import os
 import pickle
 import numpy as np
@@ -13,37 +7,35 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from cluster.cluster_utils import preparar_dados
-from cluster.cluster_predicao import treinar_modelo  # necessário se modelo não existir
+from cluster.cluster_predicao import treinar_modelo
 from data.connection import connection 
 
 import folium
 from folium.plugins import MarkerCluster, HeatMap
 
-# ----- Configurações -----
+# Configurações
 OUT_DIR = './avaliacao_outputs'
-MODEL_PATH = './models/modelo_cluster.pkl'   # ajuste se necessário
-MARGEM = 10           # margem ± para considerar 'acerto'
-SAMPLE_MAP = None     # se quiser amostrar mapas (ex: 5000), ou None para todos
-# --------------------------
+MODEL_PATH = './models/modelo_cluster.pkl'
+MARGEM = 10
+SAMPLE_MAP = None
 
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# ---------------- Funções ----------------
-
 def carregar_modelo_ou_treinar(model_path=MODEL_PATH):
-    """
+    '''
     Tenta carregar modelo de model_path. Se não existir, treina e salva.
-    """
+    '''
+    
     if os.path.exists(model_path):
         with open(model_path, 'rb') as f:
             modelo_cluster = pickle.load(f)
-        print(f"Modelo carregado de {model_path}")
+        print(f'Modelo carregado de {model_path}')
         return modelo_cluster
 
-    print(f"Arquivo {model_path} não encontrado. Treinando modelo automaticamente...")
+    print(f'Arquivo {model_path} não encontrado. Treinando modelo automaticamente...')
     df_hist = connection()
     if df_hist is None or len(df_hist) == 0:
-        raise RuntimeError("Dados históricos vazios — não é possível treinar o modelo automaticamente.")
+        raise RuntimeError('Dados históricos vazios — não é possível treinar o modelo automaticamente.')
 
     modelo_cluster = treinar_modelo(df_hist)
 
@@ -51,7 +43,7 @@ def carregar_modelo_ou_treinar(model_path=MODEL_PATH):
     os.makedirs(os.path.dirname(model_path) or '.', exist_ok=True)
     with open(model_path, 'wb') as f:
         pickle.dump(modelo_cluster, f)
-    print(f"Modelo treinado e salvo em {model_path}")
+    print(f'Modelo treinado e salvo em {model_path}')
 
     return modelo_cluster
 
@@ -74,7 +66,7 @@ def preparar_e_prever_tudo(df_raw, modelo_cluster):
     feature_names = modelo_cluster.get('feature_names', [c for c in df_preparado.columns if c != 'RiscoFogo'])
     features_disponiveis = [f for f in feature_names if f in df_preparado.columns]
     if len(features_disponiveis) == 0:
-        raise RuntimeError("Nenhuma feature disponível após preparar_dados.")
+        raise RuntimeError('Nenhuma feature disponível após preparar_dados.')
 
     X_all = df_preparado[features_disponiveis]
 
@@ -86,7 +78,7 @@ def preparar_e_prever_tudo(df_raw, modelo_cluster):
 
     model = modelo_cluster.get('modelo')
     if model is None:
-        raise RuntimeError("modelo_cluster não contém chave 'modelo'.")
+        raise RuntimeError('modelo_cluster não contém chave "modelo".')
 
     y_pred = model.predict(X_all_scaled)
     y_pred = np.clip(y_pred, 0, 100).round().astype(int)
@@ -172,16 +164,17 @@ def plot_e_salvar_metricas(metrics_df, margin_df, out_dir=OUT_DIR):
 
 
 def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
-    """
+    '''
     Gera mapa Folium apenas para o ano de 2025 mostrando:
       - ACERTO (verde)
       - SOBRE-estimativa ACIMA (laranja)
       - SUB-estimativa BAIXO (vermelho)
     Salva mapa_2025_acertos_erros.html
-    """
+    '''
+    
     df_2025 = df_eval[df_eval['Ano'] == 2025].copy()
     if df_2025.empty:
-        print("Não há dados para o ano de 2025.")
+        print('Não há dados para o ano de 2025.')
         return None
 
     if sample is not None and len(df_2025) > sample:
@@ -204,10 +197,10 @@ def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
     colors = {'ACERTO':'green', 'SOBRE':'orange', 'SUB':'red'}
 
     for _, r in df_2025.iterrows():
-        popup = (f"Ano:{int(r['Ano'])}<br>"
-                 f"Data:{pd.to_datetime(r['Data']).date()}<br>"
-                 f"Risco_true:{int(r['RiscoFogo'])} - Risco_pred:{int(r['Risco_pred'])}<br>"
-                 f"Resultado:{r['result_margem']}")
+        popup = (f'Ano:{int(r["Ano"])}<br>'
+                 f'Data:{pd.to_datetime(r["Data"]).date()}<br>'
+                 f'Risco_true:{int(r["RiscoFogo"])} - Risco_pred:{int(r["Risco_pred"])}<br>'
+                 f'Resultado:{r["result_margem"]}')
         folium.CircleMarker(
             location=(r['Latitude'], r['Longitude']),
             radius=4,
@@ -219,7 +212,7 @@ def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
 
     map_path = os.path.join(out_dir, 'map_2025_acertos_erros.html')
     m.save(map_path)
-    print("Mapa 2025 salvo:", map_path)
+    print(f'Mapa 2025 salvo: {map_path}')
     return map_path
 
 def carregar_dados_csvs(pasta_csvs):
@@ -245,7 +238,7 @@ def gerar_heatmap(df, ano=None, saida=None):
 
     df_map = df_map.dropna(subset=['Latitude', 'Longitude', 'RiscoFogo'])
     if df_map.empty:
-        print("Nenhum dado válido com Latitude, Longitude e RiscoFogo")
+        print('Nenhum dado válido com Latitude, Longitude e RiscoFogo')
         return None
 
     df_map['peso'] = df_map['RiscoFogo'] / df_map['RiscoFogo'].max()
@@ -260,35 +253,5 @@ def gerar_heatmap(df, ano=None, saida=None):
         saida = os.path.join(OUT_DIR, f'heatmap_{ano if ano else "todos_anos"}.html')
 
     mapa.save(saida)
-    print(f"Heatmap salvo em: {saida}")
+    print(f'Heatmap salvo em: {saida}')
     return saida
-
-# ---------------- Execução principal ----------------
-
-'''if __name__ == '__main__':
-    print("Iniciando avaliação e geração de gráficos...")
-
-    modelo_cluster = carregar_modelo_ou_treinar(MODEL_PATH)
-    df_hist = connection()
-    print("Dados carregados. Linhas:", len(df_hist))
-
-    df_eval, features_used = preparar_e_prever_tudo(df_hist, modelo_cluster)
-    print("Preparação + previsão concluída. Features usadas:", len(features_used))
-
-    metrics_df, margin_df = calcular_metricas_por_ano(df_eval, y_col='RiscoFogo')
-    print("Métricas por ano calculadas:")
-    print(metrics_df)
-
-    plot_e_salvar_metricas(metrics_df, margin_df, out_dir=OUT_DIR)
-
-    # Gerar apenas mapa de 2025
-    map_2025 = gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=SAMPLE_MAP)
-
-    pasta_salvar = 'data/base_db' 
-    pasta_executar = carregar_dados_csvs(pasta_salvar)
-    heat_2021 = gerar_heatmap(pasta_executar,ano=2021)
-
-    print("\nProcesso finalizado. Arquivos em:", OUT_DIR)
-    print("Mapa 2025 gerado:", map_2025)
-    print("Heatmap:", heat_2021)
-'''

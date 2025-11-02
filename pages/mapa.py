@@ -40,14 +40,14 @@ layout = dbc.Container([
                 
                 # Botão para visualização geral (todos os estados)
                 dbc.Button(
-                    "🇧🇷 Brasil",
+                    "Brasil",
                     id="btn-todos-estados",
                     color="primary",
-                    className="w-100 mb-3",
+                    className="w-100 mb-1",
                     size="sm"
                 ),
                 
-                html.Hr(),
+                html.Hr(style={'margin': '0.4rem 0'}),
                 
                 # Título da lista de estados
                 html.H6("Estados:", className="text-center mb-2"),
