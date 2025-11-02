@@ -8,6 +8,7 @@ import os
 # Carregar dados das métricas geradas
 METRICS_PATH = './avaliacao_outputs/metrics_continuas_por_ano.csv'
 MARGIN_PATH = './avaliacao_outputs/metrics_margem_por_ano.csv'
+HEATMAP_DIR = './avaliacao_outputs'
 
 # Layout da página
 layout = dbc.Container([
@@ -122,15 +123,15 @@ layout = dbc.Container([
         ], width=12, lg=6)
     ], className="mb-4"),
     
-    # Mapas interativos
+    # Heatmap do ano selecionado
     dbc.Row([
         dbc.Col([
-            html.H4("Visualização Geoespacial - 2025", className="mb-3"),
-            dbc.Tabs([
-                dbc.Tab(label="Mapa de Acertos/Erros", tab_id="tab-mapa-erros"),
-                dbc.Tab(label="Heatmap de Erros", tab_id="tab-heatmap")
-            ], id="tabs-mapas", active_tab="tab-mapa-erros"),
-            html.Div(id="content-mapas", className="mt-3")
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("Heatmap de Risco de Fogo", className="card-title mb-3"),
+                    html.Div(id='heatmap-container')
+                ])
+            ], className="shadow-sm")
         ], width=12)
     ], className="mb-4"),
     
@@ -298,7 +299,6 @@ def update_graph_acuracia(dados_carregados):
     import plotly.graph_objs as go
     
     if not dados_carregados or not os.path.exists(MARGIN_PATH):
-        # Retornar figura vazia com mensagem
         fig = go.Figure()
         fig.add_annotation(
             text="Dados não disponíveis",
@@ -371,28 +371,35 @@ def update_graph_acuracia(dados_carregados):
         return fig
 
 
+# Callback atualizado para mostrar heatmap baseado no ano selecionado
 @app.callback(
-    Output('content-mapas', 'children'),
-    Input('tabs-mapas', 'active_tab')
+    Output('heatmap-container', 'children'),
+    Input('ano-dropdown', 'value')
 )
-def render_map_content(active_tab):
-    if active_tab == "tab-mapa-erros":
-        map_path = 'avaliacao_outputs/map_2025_acertos_erros.html'
-        if os.path.exists(map_path):
-            with open(map_path, 'r', encoding='utf-8') as f:
-                map_html = f.read()
-            return html.Iframe(srcDoc=map_html, style={'width': '100%', 'height': '600px', 'border': 'none'})
-        return html.Div("Mapa não disponível", className="text-muted text-center p-5")
+def update_heatmap(ano_selecionado):
+    if ano_selecionado is None:
+        return html.Div(
+            "Selecione um ano acima para visualizar o heatmap", 
+            className="text-muted text-center p-5"
+        )
     
-    elif active_tab == "tab-heatmap":
-        heat_path = 'avaliacao_outputs/heatmap_erro_agregado.html'
-        if os.path.exists(heat_path):
-            with open(heat_path, 'r', encoding='utf-8') as f:
-                heat_html = f.read()
-            return html.Iframe(srcDoc=heat_html, style={'width': '100%', 'height': '600px', 'border': 'none'})
-        return html.Div("Heatmap não disponível", className="text-muted text-center p-5")
+    heat_path = f'avaliacao_outputs/heatmap_{ano_selecionado}.html'
     
-    return html.Div()
+    if os.path.exists(heat_path):
+        with open(heat_path, 'r', encoding='utf-8') as f:
+            heat_html = f.read()
+        return html.Iframe(
+            srcDoc=heat_html, 
+            style={'width': '100%', 'height': '600px', 'border': 'none'}
+        )
+    
+    return html.Div([
+        html.I(className="bi bi-exclamation-triangle-fill text-warning", style={'fontSize': '48px'}),
+        html.P(
+            f"Heatmap não disponível para o ano {ano_selecionado}", 
+            className="text-muted mt-3"
+        )
+    ], className="text-center p-5")
 
 
 @app.callback(
