@@ -59,7 +59,7 @@ class ClusterGraph(Graph):
         
         return abs((data2 - data1).days)
     
-    def construir_grafo_from_dataframe(
+    def construir_grafo_dataframe(
         self,
         df: pd.DataFrame,
         threshold_km: float = 50.0,
