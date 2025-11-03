@@ -2,7 +2,7 @@ from dash import dcc, html, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 
 from app import app
-from models.mapa_interativo import MapaInterativo
+from models.MapaInterativo import MapaInterativo
 
 # Carregando o CSV de previsão
 mapa = MapaInterativo('data/treated_db/previsao_2026.csv')

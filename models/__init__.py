@@ -1,1 +1,1 @@
-from . import mapa_interativo
+from . import MapaInterativo
