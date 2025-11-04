@@ -6,7 +6,7 @@ from datetime import datetime
 from cluster.cluster_utils import preparar_dados
 from cluster.cluster import criacao_variaveis_mes
 from data.connection import connection
-from models.ClusterGraph import ClusterGraph
+from models.TAD.ClusterGraph import ClusterGraph
 
 def carregar_modelo(caminho_modelo='./modelo_completo_grafo.pkl'):
     '''

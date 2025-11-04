@@ -9,7 +9,7 @@ from typing import Optional, Tuple, Dict
 
 from cluster.cluster import criacao_variaveis_mes
 from cluster.cluster_utils import preparar_dados as preparar_dados_original
-from models.ClusterGraph import ClusterGraph
+from models.TAD.ClusterGraph import ClusterGraph
 
 
 def preparar_features(df, usar_grafo: bool = False, grafo: Optional[ClusterGraph] = None):

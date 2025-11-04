@@ -9,7 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_samples, silhouette_score
 from typing import Optional, Tuple
 
-from models.ClusterGraph import ClusterGraph
+from models.TAD.ClusterGraph import ClusterGraph
 
 
 def criacao_variaveis_mes(df):
