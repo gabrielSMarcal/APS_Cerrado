@@ -2,7 +2,7 @@ from typing import Dict, List, Any
 
 class Graph:
     '''
-    Classe abstrada do TAD Gráfico (Graph)
+    Classe abstrada do TAD Grafo (Graph)
     '''
     
     def __init__(self):

@@ -65,10 +65,7 @@ def construir_grafo_hibrido(df: pd.DataFrame, threshold_km: float = 50.0, thresh
     return grafo
 
 
-def extrair_features_grafo(
-    grafo: ClusterGraph,
-    df: pd.DataFrame
-) -> pd.DataFrame:
+def extrair_features_grafo(grafo: ClusterGraph, df: pd.DataFrame) -> pd.DataFrame:
     '''
     Extrai features do grafo e adiciona ao DataFrame.
     '''
