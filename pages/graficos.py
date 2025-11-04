@@ -1,14 +1,17 @@
-from dash import dcc, html
+from dash import dcc, html, ctx
 from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from app import app
-from lista_grafos import gerar_lista_grafos
+from models.GraficoInterativo import GraficoInterativo
 
-# Gerar lista de grafos por ano
-lista_grafos = gerar_lista_grafos()
+# Inicializar a classe de gráficos interativos
+graficos = GraficoInterativo()
 
-# Definir valor padrão (2025)
-valor_padrao = 2025 if any(g['ano'] == 2025 for g in lista_grafos) else lista_grafos[-1]['ano']
+# Obter lista de grafos (compatível com estrutura anterior)
+lista_grafos = graficos.obter_lista_grafos()
+
+# Definir valor padrão (ano mais recente)
+valor_padrao = graficos.ano_mais_recente
 
 layout = dbc.Container([
     dcc.Store(id='ano-selecionado-store', data=valor_padrao),
@@ -39,7 +42,6 @@ layout = dbc.Container([
     ])
 ], fluid=True, className="px-4")
 
-# Callback para atualizar o store com o ano selecionado
 @app.callback(
     Output('ano-selecionado-store', 'data'),
     Input({'type': 'btn-ano', 'index': ALL}, 'n_clicks'),
@@ -47,16 +49,24 @@ layout = dbc.Container([
     prevent_initial_call=True
 )
 def update_ano_selecionado(n_clicks, ano_atual):
-    """
-    Atualiza o ano selecionado quando um botão é clicado
-    """
-    from dash import ctx
+    '''
+    Atualiza o ano selecionado quando um botão é clicado.
+    
+    Parâmetros:
+        n_clicks: Lista de cliques dos botões
+        ano_atual: Ano atualmente selecionado
+        
+    Retorno:
+        Ano selecionado atualizado
+    '''
+    
+    
     
     if ctx.triggered_id:
         return ctx.triggered_id['index']
+    
     return ano_atual
 
-# Callback para atualizar o grafo e os estilos dos botões
 @app.callback(
     [Output('grafo-ano', 'figure'),
      Output({'type': 'btn-ano', 'index': ALL}, 'color'),
@@ -65,20 +75,23 @@ def update_ano_selecionado(n_clicks, ano_atual):
     prevent_initial_call=False
 )
 def update_grafo_display(ano_selecionado):
-    """
-    Atualiza a exibição do gráfico e estilos dos botões
-    """
-    # Encontrar o gráfico correspondente
-    figura = None
-    for grafo in lista_grafos:
-        if grafo['ano'] == ano_selecionado:
-            figura = grafo['figura']
-            break
+    '''
+    Atualiza a exibição do gráfico e estilos dos botões.
     
-    # Se não encontrar, usar o último da lista
+    Parâmetros:
+        ano_selecionado: Ano selecionado no store
+        
+    Retorno:
+        Tupla contendo (figura, cores dos botões, outlines dos botões)
+    '''
+    
+    # Obter figura do cache
+    figura = graficos.obter_figura(ano_selecionado)
+    
+    # Se não encontrar, usar o ano mais recente
     if figura is None:
-        ano_selecionado = lista_grafos[-1]['ano'] if lista_grafos else valor_padrao
-        figura = lista_grafos[-1]['figura'] if lista_grafos else {}
+        ano_selecionado = graficos.ano_mais_recente
+        figura = graficos.obter_figura(ano_selecionado)
     
     # Atualizar cores e outlines dos botões
     colors = ['primary' if grafo['ano'] == ano_selecionado else 'secondary' for grafo in lista_grafos]
