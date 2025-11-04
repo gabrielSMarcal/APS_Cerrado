@@ -4,10 +4,11 @@ from cluster.cluster import criacao_variaveis_mes
 
 
 def preparar_dados(df, modelo_cluster=None):
-    """
+    '''
     Prepara os dados para o modelo, incluindo criação de variáveis de mês, ano e codificação de categorias.
     Se um modelo for fornecido, aplica os LabelEncoders do modelo.
-    """
+    '''
+    
     df_copy = df.copy()
     
     # Criar variáveis dummy para os meses

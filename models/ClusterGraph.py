@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Set
 import pandas as pd
 import numpy as np
 from models.Graph import Graph
@@ -12,21 +12,19 @@ class ClusterGraph(Graph):
     def __init__(self):
         super().__init__()
         self._vertice_data: Dict[int, Dict[str, Any]] = {}
-        self._features_cahce: Dict[int, Dict[str, float]] = {}
+        self._features_cache: Dict[int, Dict[str, float]] = {}
         
     def add_vertice_com_dados(self, vertice_id: int, dados: Dict[str, Any]) -> None:
         '''
         Adiciona um vértice ao grafo com dados associados.
         '''
-        
-        self.add_ponto(vertice_id)
+        self.add_node(vertice_id)
         self._vertice_data[vertice_id] = dados
         
     def get_dados_vertice(self, vertice_id: int) -> Dict[str, Any]:
         '''
         Retorna os dados associados a um vértice.
         '''
-        
         return self._vertice_data.get(vertice_id, {})
     
     @staticmethod
@@ -34,7 +32,6 @@ class ClusterGraph(Graph):
         '''
         Calcula a distância em quilômetros entre duas coordenadas geográficas usando a fórmula de Haversine.
         '''
-        
         R = 6371.0  # Raio da Terra em km
         
         lat1_rad = radians(lat1)
@@ -45,7 +42,7 @@ class ClusterGraph(Graph):
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
         
-        a = sin(dlat / 2)**2  + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)**2
+        a = sin(dlat / 2)**2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)**2
         c = 2 * atan2(sqrt(a), sqrt(1 - a))
         
         distancia = R * c
@@ -56,7 +53,6 @@ class ClusterGraph(Graph):
         '''
         Calcula a diferença em dias entre duas datas.
         '''
-        
         return abs((data2 - data1).days)
     
     def construir_grafo_dataframe(
@@ -70,20 +66,12 @@ class ClusterGraph(Graph):
         '''
         Constrói o grafo a partir de um DataFrame de dados de incêndios.
         Conecta registros próximos espacialmente e/ou temporalmente.
-        
-        Args:
-            df: DataFrame com dados de incêndio
-            threshold_km: Distância máxima em km para conexão espacial
-            threshold_dias: Diferença máxima em dias para conexão temporal
-            usar_temporal: Se True, considera proximidade temporal
-            usar_espacial: Se True, considera proximidade espacial
         '''
-        
         if 'Data' not in df.columns and 'DataHora' in df.columns:
-            df['Data'] = pd.to_datetime(df['DataHora'], erros='coerce')
+            df['Data'] = pd.to_datetime(df['DataHora'], errors='coerce')
         elif 'Data' in df.columns:
-            df['Data'] = pd.to_datetime(df['Data'], erros='coerce')
-            
+            df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+
         # Adiciona vértices com dados
         for idx, row in df.iterrows():
             dados = {
@@ -140,50 +128,68 @@ class ClusterGraph(Graph):
                 # Adicionar aresta se critérios forem atendidos
                 if conectar and componentes_peso > 0:
                     peso_medio = peso_total / componentes_peso
-                    self.add_ponto_con(v1, v2, peso_medio)
+                    self.add_edge(v1, v2, weight=peso_medio)
                 
-        print(f'Grafo construído: {len(self)} vértices, {self.total_ponto_con()} arestas.')
+        num_vertices = len(self.get_nodes())
+        num_arestas = len(self.get_edges())
+        print(f'Grafo construído: {num_vertices} vértices, {num_arestas} arestas.')
+        
+    def get_vizinhos(self, vertice_id: int) -> List[int]:
+        '''
+        Retorna a lista de vizinhos de um vértice.
+        '''
+        vizinhos = []
+        for edge in self.get_edges():
+            if edge[0] == vertice_id:
+                vizinhos.append(edge[1])
+            elif edge[1] == vertice_id:
+                vizinhos.append(edge[0])
+        return list(set(vizinhos))  # Remover duplicatas
+    
+    def get_peso(self, v1: int, v2: int) -> float:
+        '''
+        Retorna o peso da aresta entre dois vértices.
+        '''
+        attrs = self.get_edge_attributes(v1, v2)
+        if attrs:
+            return attrs.get('weight', 0.0)
+        return 0.0
         
     def calcular_grau(self, vertice_id: int) -> int:
-        ''''
-        Calcula o grau de um vértice (Número de vizinhos)
         '''
-        
+        Calcula o grau de um vértice (número de vizinhos).
+        '''
         return len(self.get_vizinhos(vertice_id))
     
     def calcular_peso_medio_arestas(self, vertice_id: int) -> float:
         '''
         Calcula o peso médio das arestas conectadas a um vértice.
         '''
-        
         vizinhos = self.get_vizinhos(vertice_id)
         
         if not vizinhos:
             return 0.0
         
-        pesos = [self.get_peso(vertice_id, v) for v in vizinhos] 
+        pesos = [self.get_peso(vertice_id, v) for v in vizinhos]
         return np.mean(pesos)
     
     def calcular_risco_medio_vizinhos(self, vertice_id: int) -> float:
         '''
         Calcula o risco médio de fogo dos vizinhos de um vértice.
         '''
-        
         vizinhos = self.get_vizinhos(vertice_id)
         
         if not vizinhos:
             return 0.0
         
-        riscos = [self._vertices_data[v]['risco_fogo'] for v in vizinhos if v in self._vertice_data]
+        riscos = [self._vertice_data[v]['risco_fogo'] for v in vizinhos if v in self._vertice_data]
         
         return np.mean(riscos) if riscos else 0.0
     
     def calcular_coeficiente_clustering(self, vertice_id: int) -> float:
         '''
         Calcula o coeficiente de clustering local de um vértice.
-        Mede o quão conectados estão os vizinhos entre si.
         '''
-        
         vizinhos = self.get_vizinhos(vertice_id)
         k = len(vizinhos)
         
@@ -199,32 +205,28 @@ class ClusterGraph(Graph):
                     
         # Coeficiente = Arestas reais / Arestas possíveis
         arestas_possiveis = k * (k - 1) / 2
-
         return arestas_entre_vizinhos / arestas_possiveis if arestas_possiveis > 0 else 0.0
     
     def calcular_centralidade_grau(self, vertice_id: int) -> float:
         '''
         Calcula a centralidade de grau normalizada de um vértice.
         '''
-        
-        n = len(self)
+        n = len(self.get_nodes())
         
         if n <= 1:
             return 0.0
         
         grau = self.calcular_grau(vertice_id)
-        
-        return grau / (n-1)
+        return grau / (n - 1)
     
-    def get_vizinhos_espaciais (self, vertice_id: int, raio_km: float) -> List[int]:
+    def get_vizinhos_espaciais(self, vertice_id: int, raio_km: float) -> List[int]:
         '''
-        Retorna vizinhos dentro de um rario geográfico especificado.
+        Retorna vizinhos dentro de um raio geográfico especificado.
         '''
-        
         if vertice_id not in self._vertice_data:
             return []
         
-        dados_origen = self._vertice_data[vertice_id]
+        dados_origem = self._vertice_data[vertice_id]
         vizinhos_raio = []
         
         for v_id, dados in self._vertice_data.items():
@@ -232,7 +234,7 @@ class ClusterGraph(Graph):
                 continue
             
             dist = self.calcular_distancia_haversine(
-                dados_origen['latitude'], dados_origen['longitude'],
+                dados_origem['latitude'], dados_origem['longitude'],
                 dados['latitude'], dados['longitude']
             )
             
@@ -245,7 +247,6 @@ class ClusterGraph(Graph):
         '''
         Retorna vizinhos dentro de uma janela temporal especificada.
         '''
-        
         if vertice_id not in self._vertice_data:
             return []
         
@@ -272,10 +273,9 @@ class ClusterGraph(Graph):
         '''
         Extrai todas as features derivadas do grafo para um vértice.
         '''
-        
         # Verificar cache
-        if vertice_id in self._features_cahce:
-            return self._features_cahce[vertice_id]
+        if vertice_id in self._features_cache:
+            return self._features_cache[vertice_id]
         
         features = {
             'grafo_grau': self.calcular_grau(vertice_id),
@@ -286,15 +286,14 @@ class ClusterGraph(Graph):
         }
         
         # Armazenar no cache
-        self._features_cahce[vertice_id] = features
+        self._features_cache[vertice_id] = features
         
         return features
     
     def extrair_features_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         '''
-        Extrai features do grado para todos os registros do DataFrame.
+        Extrai features do grafo para todos os registros do DataFrame.
         '''
-        
         df_copy = df.copy()
         
         # Inicializar colunas de features
@@ -327,28 +326,27 @@ class ClusterGraph(Graph):
         '''
         Identifica regiões críticas baseadas em alta centralidade e alto risco.
         '''
-        
         centralidades = []
         riscos = []
         
         for v_id in self._vertice_data.keys():
             centralidade = self.calcular_centralidade_grau(v_id)
             risco = self._vertice_data[v_id]['risco_fogo']
-            centralidades.append((centralidade))
-            riscos.append((risco))
+            centralidades.append(centralidade)
+            riscos.append(risco)
             
         threshold_centralidade = np.percentile(centralidades, percentil)
-        theshold_risco = np.percentile(riscos, percentil)
+        threshold_risco = np.percentile(riscos, percentil)
         regioes_criticas = []
         
         for v_id in self._vertice_data.keys():
             centralidade = self.calcular_centralidade_grau(v_id)
             risco = self._vertice_data[v_id]['risco_fogo']
             
-            if centralidade >= threshold_centralidade and risco >= theshold_risco:
+            if centralidade >= threshold_centralidade and risco >= threshold_risco:
                 regioes_criticas.append((v_id, centralidade, risco))
                 
-        # Ordenar por risco descrescente
+        # Ordenar por risco decrescente
         regioes_criticas.sort(key=lambda x: x[2], reverse=True)
         
         return regioes_criticas
@@ -356,9 +354,7 @@ class ClusterGraph(Graph):
     def calcular_risco_propagacao(self, vertice_id: int) -> float:
         '''
         Calcula um score de risco de propagação para um vértice.
-        Combina risco próprio, risco dos vizinhos e conectividade.
         '''
-        
         if vertice_id not in self._vertice_data:
             return 0.0
         
@@ -366,7 +362,7 @@ class ClusterGraph(Graph):
         risco_vizinhos = self.calcular_risco_medio_vizinhos(vertice_id)
         grau = self.calcular_grau(vertice_id)
         
-        # Score combinado: risco próprio + risco vizinhos + fator de conectividade
+        # Score combinado
         score = (risco_proprio * 0.5) + (risco_vizinhos * 0.3) + (grau * 0.2)
         
         return score
@@ -375,9 +371,10 @@ class ClusterGraph(Graph):
         '''
         Representação em string do ClusterGraph.
         '''
-        
-        return (f'ClusterGraph: {len(self)} vértices, {self.total_ponto_con()} arestas | '
+        num_vertices = len(self.get_nodes())
+        num_arestas = len(self.get_edges())
+        return (f'ClusterGraph: {num_vertices} vértices, {num_arestas} arestas | '
                 f'Dados: {len(self._vertice_data)} registros')
-        
-        
-        
+
+
+
