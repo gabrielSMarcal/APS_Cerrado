@@ -2,35 +2,27 @@ from data.connection import connection_list
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from models.MapaInterativo import MapaInterativo
 
-ESTADOS_CERRADO = [
-    'BAHIA', 'DISTRITO FEDERAL', 'GOIÁS', 'MARANHÃO',
-    'MATO GROSSO', 'MATO GROSSO DO SUL', 'MINAS GERAIS',
-    'PARANÁ', 'PIAUÍ', 'RONDÔNIA', 'SÃO PAULO', 'TOCANTINS'
-]
+# Cache global para as figuras
+_cache_figuras = {}
+_cache_inicializado = False
 
-COORDENADAS_ESTADOS = {
-    'BAHIA': (-12.5, -41.7, 6),
-    'DISTRITO FEDERAL': (-15.8, -47.9, 9),
-    'GOIÁS': (-15.8, -49.5, 6),
-    'MARANHÃO': (-5.0, -45.0, 6),
-    'MATO GROSSO': (-12.5, -55.5, 6),
-    'MATO GROSSO DO SUL': (-20.5, -54.6, 6),
-    'MINAS GERAIS': (-18.5, -44.5, 6),
-    'PARANÁ': (-24.5, -51.5, 6),
-    'PIAUÍ': (-7.5, -42.5, 6),
-    'RONDÔNIA': (-11.0, -63.0, 6),
-    'SÃO PAULO': (-22.5, -48.5, 6),
-    'TOCANTINS': (-10.0, -48.0, 6)
-}
-
-def grafo_media_risco():
+def _inicializar_cache():
     """
-    Calcula a média de RiscoFogo e a contagem de casos de fogo para cada estado do Cerrado, por ano,
-    e plota o resultado em um scatter_map para cada ano, usando a contagem para o tamanho do ponto
-    e exibindo a contagem como texto no marcador.
+    Inicializa o cache de figuras para todos os anos disponíveis.
     """
+    
+    global _cache_figuras, _cache_inicializado
+    
+    if _cache_inicializado:
+        return
+    
     df_list = connection_list()
+    
+    # Usar constantes da classe MapaInterativo
+    ESTADOS_CERRADO = MapaInterativo.ESTADOS_CERRADO
+    COORDENADAS_ESTADOS = MapaInterativo.COORDENADAS_ESTADOS
 
     df_coordenadas = pd.DataFrame({
         'Estado': list(COORDENADAS_ESTADOS.keys()),
@@ -41,25 +33,29 @@ def grafo_media_risco():
     center_lat = df_coordenadas['Latitude'].mean()
     center_lon = df_coordenadas['Longitude'].mean()
     
-    for i, df_ano in enumerate(df_list):
+    for df in df_list:
+        # Criar cópia logo no início para evitar warnings
+        df_trabalho = df.copy()
         
-        ano = 'Desconhecido'
-        if 'DataHora' in df_ano.columns:
-            df_ano['DataHora'] = pd.to_datetime(df_ano['DataHora'], errors='coerce')
-            ano = df_ano['DataHora'].dt.year.mode()[0] if not df_ano.empty and not df_ano['DataHora'].isnull().all() else f'DataFrame {i+1}'
-        elif 'Data' in df_ano.columns:
-            df_ano['DataHora'] = pd.to_datetime(df_ano['Data'], errors='coerce')
-            ano = df_ano['DataHora'].dt.year.mode()[0] if not df_ano.empty and not df_ano['DataHora'].isnull().all() else f'DataFrame {i+1}'
+        # Extrair ano
+        if 'DataHora' in df_trabalho.columns:
+            df_trabalho.loc[:, 'DataHora'] = pd.to_datetime(df_trabalho['DataHora'], errors='coerce')
+            ano = int(df_trabalho['DataHora'].dt.year.mode()[0]) if not df_trabalho.empty and not df_trabalho['DataHora'].isnull().all() else None
+        elif 'Data' in df_trabalho.columns:
+            df_trabalho.loc[:, 'DataHora'] = pd.to_datetime(df_trabalho['Data'], errors='coerce')
+            ano = int(df_trabalho['DataHora'].dt.year.mode()[0]) if not df_trabalho.empty and not df_trabalho['DataHora'].isnull().all() else None
         else:
-            ano = f'DataFrame {i+1}'
-
-        if 'Estado' not in df_ano.columns:
-            print(f"Coluna 'Estado' não encontrada no {ano}. Pulando.")
             continue
-            
-        df_ano['Estado'] = df_ano['Estado'].str.upper()
-
-        df_cerrado_ano = df_ano[df_ano['Estado'].isin(ESTADOS_CERRADO)]
+        
+        if ano is None or 'Estado' not in df_trabalho.columns:
+            continue
+        
+        # Processar dados - garantir upper() em uma cópia
+        df_trabalho.loc[:, 'Estado'] = df_trabalho['Estado'].str.upper()
+        df_cerrado_ano = df_trabalho[df_trabalho['Estado'].isin(ESTADOS_CERRADO)].copy()
+        
+        if df_cerrado_ano.empty:
+            continue
         
         df_analise_ano = df_cerrado_ano.groupby('Estado').agg(
             MediaRiscoFogo=('RiscoFogo', 'mean'),
@@ -73,13 +69,14 @@ def grafo_media_risco():
             how='left'
         )
         
-        df_plot_final = df_plot.dropna(subset=['MediaRiscoFogo'])
-        df_plot_final['ContagemCasos'] = df_plot_final['ContagemCasos'].astype(int) 
+        df_plot_final = df_plot.dropna(subset=['MediaRiscoFogo']).copy()
         
         if df_plot_final.empty:
-            print(f"Nenhum dado de RiscoFogo encontrado para os estados do Cerrado no {ano}. Pulando a plotagem.")
             continue
-            
+        
+        df_plot_final.loc[:, 'ContagemCasos'] = df_plot_final['ContagemCasos'].astype(int)
+        
+        # Gerar figura
         fig = px.scatter_map(
             df_plot_final,
             lat='Latitude',
@@ -115,13 +112,41 @@ def grafo_media_risco():
         )
 
         fig.update_traces(
-            marker=dict(
-                sizemin=20
-            ),
+            marker=dict(sizemin=20),
             selector=dict(type='scattermap') 
         )
+        
+        fig.update_layout(
+            title_x=0.5,
+            title_xanchor='center'
+        )
+        
+        # Armazenar no cache
+        _cache_figuras[ano] = fig
+    
+    _cache_inicializado = True
 
-        fig.show()
+def gerar_grafico_media_risco_por_ano(ano: int):
+    """
+    Gera um gráfico de média de risco para um ano específico.
+    Usa cache para melhorar performance.
+    """
+    
+    # Inicializar cache se necessário
+    _inicializar_cache()
+    
+    # Retornar do cache
+    return _cache_figuras.get(ano)
 
-if __name__ == '__main__':
-    grafo_media_risco()
+def grafo_media_risco():
+    """
+    Função original mantida para retrocompatibilidade.
+    Gera e exibe gráficos para todos os anos.
+    """
+    
+    _inicializar_cache()
+    
+    for ano in sorted(_cache_figuras.keys()):
+        fig = _cache_figuras[ano]
+        if fig:
+            fig.show()

@@ -3,6 +3,8 @@ from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from app import app
 from models.GraficoInterativo import GraficoInterativo
+from grafico_media_risco import gerar_grafico_media_risco_por_ano
+import plotly.graph_objects as go
 
 # Inicializar a classe de gráficos interativos
 graficos = GraficoInterativo()
@@ -35,9 +37,19 @@ layout = dbc.Container([
             ], className="sticky-top", style={'top': '20px'})
         ], width=2, className="pe-3"),
         
-        # Coluna principal com o gráfico
+        # Coluna principal com os gráficos
         dbc.Col([
-            dcc.Graph(id='grafo-ano', style={'height': '80vh'})
+            # Gráfico de pontos por município
+            html.Div([
+                html.H5("Risco de Fogo Anual", className="text-center mb-3"),
+                dcc.Graph(id='grafo-ano', style={'height': '70vh'})
+            ], className="mb-4"),
+            
+            # Gráfico de média de risco por estado
+            html.Div([
+                html.H5("Média de Risco por Estado", className="text-center mb-3"),
+                dcc.Graph(id='grafo-media-risco', style={'height': '70vh'})
+            ])
         ], width=10)
     ])
 ], fluid=True, className="px-4")
@@ -59,9 +71,6 @@ def update_ano_selecionado(n_clicks, ano_atual):
     Retorno:
         Ano selecionado atualizado
     '''
-    
-    
-    
     if ctx.triggered_id:
         return ctx.triggered_id['index']
     
@@ -69,6 +78,7 @@ def update_ano_selecionado(n_clicks, ano_atual):
 
 @app.callback(
     [Output('grafo-ano', 'figure'),
+     Output('grafo-media-risco', 'figure'),
      Output({'type': 'btn-ano', 'index': ALL}, 'color'),
      Output({'type': 'btn-ano', 'index': ALL}, 'outline')],
     Input('ano-selecionado-store', 'data'),
@@ -76,25 +86,35 @@ def update_ano_selecionado(n_clicks, ano_atual):
 )
 def update_grafo_display(ano_selecionado):
     '''
-    Atualiza a exibição do gráfico e estilos dos botões.
-    
-    Parâmetros:
-        ano_selecionado: Ano selecionado no store
-        
-    Retorno:
-        Tupla contendo (figura, cores dos botões, outlines dos botões)
+    Atualiza a exibição dos gráficos e estilos dos botões.
     '''
     
-    # Obter figura do cache
-    figura = graficos.obter_figura(ano_selecionado)
+    # Obter figuras do cache (agilizar carregamento)
+    figura_pontos = graficos.obter_figura(ano_selecionado)
+    figura_media = gerar_grafico_media_risco_por_ano(ano_selecionado)
     
     # Se não encontrar, usar o ano mais recente
-    if figura is None:
+    if figura_pontos is None:
         ano_selecionado = graficos.ano_mais_recente
-        figura = graficos.obter_figura(ano_selecionado)
+        figura_pontos = graficos.obter_figura(ano_selecionado)
+        figura_media = gerar_grafico_media_risco_por_ano(ano_selecionado)
+    
+    # Se ainda não houver figura de média, criar uma figura vazia
+    if figura_media is None:
+        figura_media = go.Figure()
+        figura_media.update_layout(
+            title=f"Sem dados disponíveis para o ano {ano_selecionado}",
+            annotations=[{
+                'text': 'Dados não disponíveis',
+                'xref': 'paper',
+                'yref': 'paper',
+                'showarrow': False,
+                'font': {'size': 20}
+            }]
+        )
     
     # Atualizar cores e outlines dos botões
     colors = ['primary' if grafo['ano'] == ano_selecionado else 'secondary' for grafo in lista_grafos]
     outlines = [False if grafo['ano'] == ano_selecionado else True for grafo in lista_grafos]
     
-    return figura, colors, outlines
+    return figura_pontos, figura_media, colors, outlines
