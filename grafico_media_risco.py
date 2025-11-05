@@ -39,10 +39,10 @@ def _inicializar_cache():
         
         # Extrair ano
         if 'DataHora' in df_trabalho.columns:
-            df_trabalho.loc[:, 'DataHora'] = pd.to_datetime(df_trabalho['DataHora'], errors='coerce')
+            df_trabalho['DataHora'] = pd.to_datetime(df_trabalho['DataHora'], errors='coerce')
             ano = int(df_trabalho['DataHora'].dt.year.mode()[0]) if not df_trabalho.empty and not df_trabalho['DataHora'].isnull().all() else None
         elif 'Data' in df_trabalho.columns:
-            df_trabalho.loc[:, 'DataHora'] = pd.to_datetime(df_trabalho['Data'], errors='coerce')
+            df_trabalho['DataHora'] = pd.to_datetime(df_trabalho['Data'], errors='coerce')
             ano = int(df_trabalho['DataHora'].dt.year.mode()[0]) if not df_trabalho.empty and not df_trabalho['DataHora'].isnull().all() else None
         else:
             continue
@@ -51,7 +51,7 @@ def _inicializar_cache():
             continue
         
         # Processar dados - garantir upper() em uma cópia
-        df_trabalho.loc[:, 'Estado'] = df_trabalho['Estado'].str.upper()
+        df_trabalho['Estado'] = df_trabalho['Estado'].str.upper()
         df_cerrado_ano = df_trabalho[df_trabalho['Estado'].isin(ESTADOS_CERRADO)].copy()
         
         if df_cerrado_ano.empty:
@@ -74,7 +74,7 @@ def _inicializar_cache():
         if df_plot_final.empty:
             continue
         
-        df_plot_final.loc[:, 'ContagemCasos'] = df_plot_final['ContagemCasos'].astype(int)
+        df_plot_final = df_plot_final.assign(ContagemCasos=df_plot_final['ContagemCasos'].astype(int))
         
         # Gerar figura
         fig = px.scatter_map(
