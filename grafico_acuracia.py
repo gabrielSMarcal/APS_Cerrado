@@ -14,8 +14,8 @@ import folium
 from folium.plugins import MarkerCluster, HeatMap
 
 # Configurações
-OUT_DIR = './avaliacao_outputs'
-MODEL_PATH = './models/modelo_cluster.pkl'
+OUT_DIR = './assets/avaliacao_outputs'
+MODEL_PATH = './models/modelo_completo_grafo.pkl'
 MARGEM = 10
 SAMPLE_MAP = None
 

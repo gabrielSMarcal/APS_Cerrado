@@ -6,9 +6,9 @@ import pandas as pd
 import os
 
 # Carregar dados das métricas geradas
-METRICS_PATH = './avaliacao_outputs/metrics_continuas_por_ano.csv'
-MARGIN_PATH = './avaliacao_outputs/metrics_margem_por_ano.csv'
-HEATMAP_DIR = './avaliacao_outputs'
+METRICS_PATH = './assets/avaliacao_outputs/metrics_continuas_por_ano.csv'
+MARGIN_PATH = './assets/avaliacao_outputs/metrics_margem_por_ano.csv'
+HEATMAP_DIR = './assets/avaliacao_outputs'
 
 # Layout da página
 layout = dbc.Container([
@@ -70,23 +70,6 @@ layout = dbc.Container([
             )
         ], width=12, md=4)
     ]),
-    
-    # Heatmap do ano selecionado
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("🗺️ Mapa de Calor - Risco de Fogo", className="card-title mb-3"),
-                    html.P(
-                        "Visualização geoespacial do risco de incêndio previsto pelo modelo. "
-                        "Cores mais quentes indicam maior risco.",
-                        className="text-muted small mb-3"
-                    ),
-                    html.Div(id='heatmap-container')
-                ])
-            ], className="shadow-sm")
-        ], width=12)
-    ], className="mb-4"),
     
     # Explicação das métricas
     dbc.Row([
@@ -479,7 +462,7 @@ def update_heatmap(ano_selecionado):
             )
         ], className="text-center p-5")
     
-    heat_path = f'avaliacao_outputs/heatmap_{ano_selecionado}.html'
+    heat_path = f'assets/avaliacao_outputs/heatmap_{ano_selecionado}.html'
     
     if os.path.exists(heat_path):
         with open(heat_path, 'r', encoding='utf-8') as f:
