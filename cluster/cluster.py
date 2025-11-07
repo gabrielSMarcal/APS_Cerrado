@@ -10,90 +10,13 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 from typing import Optional, Tuple
 
 from models.TAD.ClusterGraph import ClusterGraph
-
-
-def criacao_variaveis_mes(df):
-    '''
-    Criação das variáveis dummy para os meses do ano.
-    Mantido igual ao original para compatibilidade.
-    '''
-    
-    # Verificar se a coluna 'DataHora' existe
-    if 'DataHora' in df.columns:
-        # Criar a coluna 'Data' a partir de 'DataHora'
-        df['Data'] = pd.to_datetime(df['DataHora'], errors='coerce')
-    elif 'Data' in df.columns:
-        # Garantir que a coluna 'Data' esteja no formato datetime
-        df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
-    else:
-        raise KeyError('Nenhuma coluna de data encontrada ("DataHora" ou "Data").')
-
-    # Verificar se há valores inválidos após a conversão
-    if df['Data'].isna().any():
-        raise ValueError('A coluna "Data" contém valores inválidos após a conversão para datetime.')
-
-    # Extrair o mês
-    df['Mes'] = df['Data'].dt.month
-
-    # Criação dos meses dummy
-    for mes in range(1, 13):
-        df[f'Mes_{mes}'] = (df['Mes'] == mes).astype(int)
-
-    # Remover a coluna 'Mes'
-    df = df.drop(columns=['Mes'])
-
-    return df
-
-
-def preparar_dados(df, usar_grafo: bool = False, grafo: Optional[ClusterGraph] = None):
-    '''
-    Formação dos dados para o KMeans.
-    Agora com suporte opcional para features de grafo.
-    '''
-    
-    # Criar uma cópia para não modificar o original
-    df_copy = df.copy()
-
-    # Adicionar features do grafo se solicitado
-    if usar_grafo and grafo is not None:
-        print('Adicionando features do grafo aos dados...')
-        df_copy = grafo.extrair_features_dataframe(df_copy)
-
-    # Remover colunas não necessárias para o modelo
-    colunas_remover = []
-    if 'DataHora' in df_copy.columns:
-        colunas_remover.append('DataHora')
-    if 'Data' in df_copy.columns:
-        colunas_remover.append('Data')
-
-    # Verificar se existem outras colunas de data/objeto
-    for col in df_copy.columns:
-        if df_copy[col].dtype == 'object' and col not in colunas_remover:
-            colunas_remover.append(col)
-
-    # Remover as colunas identificadas
-    df_copy = df_copy.drop(columns=colunas_remover, errors='ignore')
-
-    # Separar features e target
-    y = df_copy['RiscoFogo']
-    X = df_copy.drop(columns=['RiscoFogo'])
-
-    # Verificar se há valores não numéricos
-    print(f'Colunas em X: {X.columns.tolist()}')
-    print(f'Tipos de dados em X:\n{X.dtypes}')
-
-    # Normalização
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    return X, X_scaled, y, scaler, list(X.columns)
+from cluster.preparacao_dados import preparar_para_clustering
 
 
 def encontrar_cluster(X_scaled, k_range=range(2, 20), salvar_grafico: bool = True):
     '''
     Na escala de 2 a 20 clusters, encontrar o melhor número de clusters
     usando os métodos do cotovelo e da silhueta.
-    Mantido igual ao original.
     '''
     
     inercias = []
@@ -147,23 +70,25 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20), salvar_grafico: bool = Tru
     return melhor_k, silhuetas, inercias, k_range
 
 
-def aplicar_clustering(df, n_clusters: int = 12, usar_grafo: bool = False, grafo: Optional[ClusterGraph] = None) -> Tuple[pd.DataFrame, KMeans, StandardScaler, list]:
-    '''
-    Aplica clustering aos dados, opcionalmente usando features de grafo.
-    '''
+def aplicar_clustering(
+    df, 
+    n_clusters: int = 12, 
+    usar_grafo: bool = False, 
+    grafo: Optional[ClusterGraph] = None
+) -> Tuple[pd.DataFrame, KMeans, StandardScaler, list]:
+    """Aplica clustering usando módulo de preparação centralizado."""
     print(f'\n{"="*60}')
     print(f'APLICANDO CLUSTERING (k={n_clusters})')
     if usar_grafo:
         print(f'Modo: COM features de grafo')
     else:
         print(f'Modo: SEM features de grafo (original)')
-    print(f'{'='*60}\n')
+    print(f'{"="*60}\n')
     
-    # Criar variáveis de mês
-    df_preparado = criacao_variaveis_mes(df.copy())
-    
-    # Preparar dados
-    X, X_scaled, y, scaler, feature_names = preparar_dados(df_preparado, usar_grafo=usar_grafo, grafo=grafo)
+    # Usar função centralizada
+    X, X_scaled, y, label_encoders, feature_names = preparar_para_clustering(
+        df, usar_grafo=usar_grafo, grafo=grafo
+    )
     
     # Aplicar KMeans
     print(f'\nTreinando KMeans com {n_clusters} clusters...')
@@ -182,6 +107,10 @@ def aplicar_clustering(df, n_clusters: int = 12, usar_grafo: bool = False, grafo
     print(f'\nDistribuição dos clusters:')
     print(df_resultado['cluster_id'].value_counts().sort_index())
     
+    # Criar scaler para retornar (compatibilidade)
+    scaler = StandardScaler()
+    scaler.fit(X)
+    
     return df_resultado, kmeans, scaler, feature_names
 
 
@@ -194,17 +123,23 @@ def comparar_clustering_com_sem_grafo(df, grafo: ClusterGraph, n_clusters: int =
     print(f'{"="*60}\n')
     
     # Clustering sem grafo (original)
-    df_sem_grafo, kmeans_sem, scaler_sem, features_sem = aplicar_clustering(df, n_clusters, usar_grafo=False, grafo=None)
+    df_sem_grafo, kmeans_sem, scaler_sem, features_sem = aplicar_clustering(
+        df, n_clusters, usar_grafo=False, grafo=None
+    )
     
     # Clustering com grafo
-    df_com_grafo, kmeans_com, scaler_com, features_com = aplicar_clustering(df, n_clusters, usar_grafo=True, grafo=grafo)
+    df_com_grafo, kmeans_com, scaler_com, features_com = aplicar_clustering(
+        df, n_clusters, usar_grafo=True, grafo=grafo
+    )
     
-    # Preparar dados para cálculo de silhueta
-    df_prep_sem = criacao_variaveis_mes(df.copy())
-    X_sem, X_scaled_sem, _, _, _ = preparar_dados(df_prep_sem, usar_grafo=False)
+    # Preparar dados para cálculo de silhueta usando função centralizada
+    X_sem, X_scaled_sem, _, _, _ = preparar_para_clustering(
+        df, usar_grafo=False, grafo=None
+    )
     
-    df_prep_com = criacao_variaveis_mes(df.copy())
-    X_com, X_scaled_com, _, _, _ = preparar_dados(df_prep_com, usar_grafo=True, grafo=grafo)
+    X_com, X_scaled_com, _, _, _ = preparar_para_clustering(
+        df, usar_grafo=True, grafo=grafo
+    )
     
     # Calcular scores
     silhouette_sem = silhouette_score(X_scaled_sem, df_sem_grafo['cluster_id'])
@@ -231,24 +166,33 @@ def comparar_clustering_com_sem_grafo(df, grafo: ClusterGraph, n_clusters: int =
     print(f'  - Número de features: {len(features_com)}')
     print(f'  - Features adicionadas: {len(features_com) - len(features_sem)}')
     print(f'\nMelhoria:')
-    print(f'  - Absoluta: {resultados['melhoria']:+.4f}')
-    print(f'  - Percentual: {resultados['melhoria_percentual']:+.2f}%')
+    print(f'  - Absoluta: {resultados["melhoria"]:+.4f}')
+    print(f'  - Percentual: {resultados["melhoria_percentual"]:+.2f}%')
     print(f'{"="*60}\n')
     
     return resultados
 
 
-def visualizar_clusters_pca(df, usar_grafo: bool = False, grafo: Optional[ClusterGraph] = None, n_clusters: int = 12, salvar: bool = True) -> None:
+def visualizar_clusters_pca(
+    df, 
+    usar_grafo: bool = False, 
+    grafo: Optional[ClusterGraph] = None, 
+    n_clusters: int = 12, 
+    salvar: bool = True
+) -> None:
     '''
     Visualiza clusters em 2D usando PCA.
     '''
     
     # Aplicar clustering
-    df_clustered, kmeans, scaler, feature_names = aplicar_clustering(df, n_clusters, usar_grafo, grafo)
+    df_clustered, kmeans, scaler, feature_names = aplicar_clustering(
+        df, n_clusters, usar_grafo, grafo
+    )
     
-    # Preparar dados
-    df_prep = criacao_variaveis_mes(df.copy())
-    X, X_scaled, y, _, _ = preparar_dados(df_prep, usar_grafo, grafo)
+    # Preparar dados usando função centralizada
+    X, X_scaled, y, _, _ = preparar_para_clustering(
+        df, usar_grafo=usar_grafo, grafo=grafo
+    )
     
     # Aplicar PCA para reduzir a 2D
     pca = PCA(n_components=2)

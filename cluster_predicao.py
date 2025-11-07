@@ -4,50 +4,11 @@ import pickle
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from typing import Optional, Tuple, Dict
 
-from cluster.cluster import criacao_variaveis_mes
-from cluster.cluster_utils import preparar_dados as preparar_dados_original
 from models.TAD.ClusterGraph import ClusterGraph
-
-
-def preparar_features(df, usar_grafo: bool = False, grafo: Optional[ClusterGraph] = None):
-    '''
-    Preparar as features para o modelo de predição.
-    Agora com suporte para features de grafo.
-    '''
-    df_copy = df.copy()
-    df_copy = criacao_variaveis_mes(df_copy)
-    
-    if df_copy['Data'].dtype == 'object':
-        df_copy['Data'] = pd.to_datetime(df_copy['Data'])
-        
-    df_copy['Ano'] = df_copy['Data'].dt.year
-    df_copy['DiaAno'] = df_copy['Data'].dt.dayofyear
-    
-    # Adicionar features do grafo se solicitado
-    if usar_grafo and grafo is not None:
-        print('Adicionando features do grafo às features de predição...')
-        df_copy = grafo.extrair_features_dataframe(df_copy)
-    
-    label_encoders = {}
-    
-    # Codificar todas as colunas categóricas (tipo object)
-    colunas_categoricas = df_copy.select_dtypes(include=['object']).columns.tolist()
-    colunas_remover = ['DataHora', 'Data']
-    
-    for col in colunas_categoricas:
-        if col not in colunas_remover:
-            le = LabelEncoder()
-            df_copy[f'{col}_encoded'] = le.fit_transform(df_copy[col].astype(str))
-            label_encoders[col] = le
-            colunas_remover.append(col)
-    
-    # Remover colunas originais categóricas e de data
-    df_copy = df_copy.drop(columns=[col for col in colunas_remover if col in df_copy.columns])
-    
-    return df_copy, label_encoders
+from cluster.preparacao_dados import preparar_para_predicao, validar_features
 
 
 def treinar_modelo(
@@ -58,18 +19,7 @@ def treinar_modelo(
     salvar_modelo: bool = False,
     caminho_modelo: str = 'modelo_cluster_grafo.pkl'
 ) -> Dict:
-    '''
-    Treinar o modelo de predição.
-    Agora com suporte para features de grafo.
-    
-    Args:
-        df: DataFrame com dados
-        usar_grafo: Se True, usa features do grafo
-        grafo: ClusterGraph construído (opcional)
-        mostrar_acuracia: Se True, exibe métricas de acurácia
-        salvar_modelo: Se True, salva o modelo em arquivo
-        caminho_modelo: Caminho para salvar o modelo
-    '''
+    """Treina modelo usando módulo de preparação centralizado."""
     print(f'\n{"="*60}')
     print(f'TREINANDO MODELO DE PREDIÇÃO')
     if usar_grafo:
@@ -78,7 +28,10 @@ def treinar_modelo(
         print(f'Modo: SEM features de grafo (original)')
     print(f'{"="*60}\n')
     
-    df_preparado, label_encoders = preparar_features(df, usar_grafo, grafo)
+    # Usar função centralizada
+    df_preparado, label_encoders = preparar_para_predicao(
+        df, usar_grafo=usar_grafo, grafo=grafo
+    )
     
     seed = 4224
     
@@ -88,7 +41,9 @@ def treinar_modelo(
     print(f'Shape de X: {X.shape}')
     print(f'Features: {list(X.columns)}')
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed, shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=seed, shuffle=True
+    )
     
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -170,13 +125,6 @@ def treinar_modelo(
 def comparar_modelos(df, grafo: ClusterGraph) -> Dict:
     '''
     Compara performance do modelo com e sem features de grafo.
-    
-    Args:
-        df: DataFrame com dados
-        grafo: ClusterGraph construído
-        
-    Returns:
-        Dicionário com resultados da comparação
     '''
 
     print(f'\n{"="*60}')
@@ -248,15 +196,18 @@ def comparar_modelos(df, grafo: ClusterGraph) -> Dict:
 
 
 def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.ndarray:
-    '''
-    Faz predições usando o modelo treinado.
-    '''
-    
+    """Faz predições usando função de preparação centralizada."""
     usar_grafo = modelo_cluster.get('usar_grafo', False)
     grafo = modelo_cluster.get('grafo', None)
+    label_encoders = modelo_cluster.get('label_encoders', None)
     
-    # Preparar features
-    df_preparado, _ = preparar_features(df_novos_dados, usar_grafo, grafo)
+    # Usar função centralizada
+    df_preparado, _ = preparar_para_predicao(
+        df_novos_dados, 
+        usar_grafo=usar_grafo, 
+        grafo=grafo,
+        label_encoders=label_encoders
+    )
     
     # Remover RiscoFogo se existir
     if 'RiscoFogo' in df_preparado.columns:
@@ -264,13 +215,11 @@ def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.nda
     else:
         X = df_preparado
     
-    # Garantir que as features estão na ordem correta
-    X = X[modelo_cluster['feature_names']]
+    # Validar e reordenar features
+    X = validar_features(X, modelo_cluster['feature_names'])
     
-    # Normalizar
+    # Normalizar e predizer
     X_scaled = modelo_cluster['scaler'].transform(X)
-    
-    # Predizer
     predicoes = modelo_cluster['modelo'].predict(X_scaled)
     
     return predicoes
