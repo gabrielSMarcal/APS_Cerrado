@@ -3,7 +3,6 @@ from cluster.cluster_graph import construir_grafo_hibrido
 from cluster_predicao import treinar_modelo
 import os
 
-# Criar pasta models se não existir
 os.makedirs('./models', exist_ok=True)
 
 print('🔄 Carregando dados históricos...')
@@ -15,12 +14,17 @@ if df is None or len(df) == 0:
 
 print(f'✅ {len(df)} registros carregados\n')
 
-# Treinar modelo COM grafo (recomendado)
 print('='*60)
 print('GERANDO MODELO COM FEATURES DE GRAFO')
 print('='*60)
 
-grafo = construir_grafo_hibrido(df, threshold_km=50.0, threshold_dias=7)
+grafo = construir_grafo_hibrido(
+    df, 
+    threshold_km=50.0, 
+    threshold_dias=7,
+    grid_size_km=25.0,
+    janela_temporal_dias=7
+)
 
 treinar_modelo(
     df,

@@ -5,94 +5,65 @@ from typing import Tuple
 from models.TAD.ClusterGraph import ClusterGraph
 
 
-def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0) -> ClusterGraph:
-    '''
-    Constrói um grafo baseado apenas em proximidade geográfica.
-    
-    Args:
-        df: DataFrame com dados de incêndio
-        threshold_km: Distância máxima em km para conexão
-    '''
-    
+def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0, grid_size_km: float = 25.0) -> ClusterGraph:
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
         df,
         threshold_km=threshold_km,
         threshold_dias=0,
         usar_temporal=False,
-        usar_espacial=True
+        usar_espacial=True,
+        grid_size_km=grid_size_km,
+        janela_temporal_dias=30
     )
     return grafo
 
 
-def construir_grafo_temporal(df: pd.DataFrame, threshold_dias: int = 7) -> ClusterGraph:
-    '''
-    Constrói um grafo baseado apenas em proximidade temporal.
-    
-    Args:
-        df: DataFrame com dados de incêndio
-        threshold_dias: Diferença máxima em dias para conexão
-    '''
-    
+def construir_grafo_temporal(df: pd.DataFrame, threshold_dias: int = 7, janela_temporal_dias: int = 7) -> ClusterGraph:
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
         df,
         threshold_km=0,
         threshold_dias=threshold_dias,
         usar_temporal=True,
-        usar_espacial=False
+        usar_espacial=False,
+        grid_size_km=50.0,
+        janela_temporal_dias=janela_temporal_dias
     )
-    
     return grafo
 
 
-def construir_grafo_hibrido(df: pd.DataFrame, threshold_km: float = 50.0, threshold_dias: int = 7) -> ClusterGraph:
-    '''
-    Constrói um grafo combinando proximidade espacial e temporal.
-    
-    Args:
-        df: DataFrame com dados de incêndio
-        threshold_km: Distância máxima em km para conexão espacial
-        threshold_dias: Diferença máxima em dias para conexão temporal
-    '''
-    
+def construir_grafo_hibrido(
+    df: pd.DataFrame, 
+    threshold_km: float = 50.0, 
+    threshold_dias: int = 7,
+    grid_size_km: float = 25.0,
+    janela_temporal_dias: int = 7
+) -> ClusterGraph:
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
         df,
         threshold_km=threshold_km,
         threshold_dias=threshold_dias,
         usar_temporal=True,
-        usar_espacial=True
+        usar_espacial=True,
+        grid_size_km=grid_size_km,
+        janela_temporal_dias=janela_temporal_dias
     )
     return grafo
 
 
 def extrair_features_grafo(grafo: ClusterGraph, df: pd.DataFrame) -> pd.DataFrame:
-    '''
-    Extrai features do grafo e adiciona ao DataFrame.
-    '''
-    
     df_features = grafo.extrair_features_dataframe(df)
-    
     return df_features
 
 
 def analisar_regioes_criticas(grafo: ClusterGraph, df: pd.DataFrame, percentil: float = 90) -> pd.DataFrame:
-    '''
-    Identifica e retorna informações sobre regiões críticas.
-    
-    Args:
-        grafo: ClusterGraph já construído
-        df: DataFrame original
-        percentil: Percentil para definir regiões críticas
-    '''
-    
     regioes = grafo.identificar_regioes_criticas(percentil)
     
     if not regioes:
         return pd.DataFrame()
     
-    # Criar DataFrame com informações das regiões críticas
     dados_regioes = []
     for vertice_id, centralidade, risco in regioes:
         dados_vertice = grafo.get_dados_vertice(vertice_id)
@@ -116,31 +87,22 @@ def preparar_dados_com_grafo(
     df: pd.DataFrame,
     threshold_km: float = 50.0,
     threshold_dias: int = 7,
-    tipo_grafo: str = 'hibrido'
+    tipo_grafo: str = 'hibrido',
+    grid_size_km: float = 25.0,
+    janela_temporal_dias: int = 7
 ) -> Tuple[pd.DataFrame, ClusterGraph]:
-    '''
-    Prepara dados construindo grafo e extraindo features.
-    
-    Args:
-        df: DataFrame com dados de incêndio
-        threshold_km: Distância máxima em km para conexão espacial
-        threshold_dias: Diferença máxima em dias para conexão temporal
-        tipo_grafo: Tipo de grafo ('espacial', 'temporal', 'hibrido')
-    '''
 
     print(f"\n{'='*60}")
     print(f"Preparando dados com grafo tipo: {tipo_grafo}")
     print(f"{'='*60}")
 
-    # Construir grafo baseado no tipo especificado
     if tipo_grafo == 'espacial':
-        grafo = construir_grafo_espacial(df, threshold_km)
+        grafo = construir_grafo_espacial(df, threshold_km, grid_size_km)
     elif tipo_grafo == 'temporal':
-        grafo = construir_grafo_temporal(df, threshold_dias)
-    else:  # hibrido
-        grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias)
+        grafo = construir_grafo_temporal(df, threshold_dias, janela_temporal_dias)
+    else:
+        grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias, grid_size_km, janela_temporal_dias)
     
-    # Extrair features do grafo
     df_com_features = grafo.extrair_features_dataframe(df)
 
     print(f"\nFeatures do grafo adicionadas ao DataFrame")
@@ -150,10 +112,6 @@ def preparar_dados_com_grafo(
 
 
 def calcular_estatisticas_grafo(grafo: ClusterGraph) -> dict:
-    '''
-    Calcula estatísticas descritivas do grafo.
-    '''
-    
     vertices = grafo.get_pontos()
     
     if not vertices:
@@ -178,10 +136,6 @@ def calcular_estatisticas_grafo(grafo: ClusterGraph) -> dict:
 
 
 def imprimir_estatisticas_grafo(grafo: ClusterGraph) -> None:
-    '''
-    Imprime estatísticas descritivas do grafo de forma formatada.
-    '''
-    
     stats = calcular_estatisticas_grafo(grafo)
     
     if not stats:
@@ -206,17 +160,10 @@ def imprimir_estatisticas_grafo(grafo: ClusterGraph) -> None:
 def otimizar_thresholds(
     df: pd.DataFrame,
     threshold_km_range: list = [30, 50, 100],
-    threshold_dias_range: list = [3, 7, 14]
+    threshold_dias_range: list = [3, 7, 14],
+    grid_size_km: float = 25.0,
+    janela_temporal_dias: int = 7
 ) -> Tuple[float, int, dict]:
-    '''
-    Testa diferentes combinações de thresholds e retorna a melhor configuração
-    baseada em densidade e conectividade do grafo.
-    
-    Args:
-        df: DataFrame com dados de incêndio
-        threshold_km_range: Lista de valores de threshold_km para testar
-        threshold_dias_range: Lista de valores de threshold_dias para testar
-    '''
 
     print(f"\n{'='*60}")
     print(f"OTIMIZANDO THRESHOLDS DO GRAFO")
@@ -228,12 +175,10 @@ def otimizar_thresholds(
         for threshold_dias in threshold_dias_range:
             print(f"\nTestando: threshold_km={threshold_km}, threshold_dias={threshold_dias}")
             
-            grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias)
+            grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias, grid_size_km, janela_temporal_dias)
             stats = calcular_estatisticas_grafo(grafo)
             
             if stats:
-                # Score combinado: densidade moderada + grau médio razoável
-                # Queremos um grafo nem muito denso nem muito esparso
                 score = stats['grau_medio'] * (1 - abs(stats['densidade'] - 0.1))
                 
                 resultados.append({
@@ -250,7 +195,6 @@ def otimizar_thresholds(
         print('Nenhum resultado válido encontrado.')
         return 50.0, 7, {}
     
-    # Ordenar por score e pegar o melhor
     resultados.sort(key=lambda x: x['score'], reverse=True)
     melhor = resultados[0]
 

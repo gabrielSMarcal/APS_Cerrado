@@ -25,10 +25,10 @@ def treinar_modelo(
     """
     Treina modelo Random Forest para predição de risco de fogo.
     
-    OTIMIZAÇÕES:
+    OTIMIZAÇÕES APLICADAS:
+    - Extrai features do grafo ANTES do treinamento
     - NÃO salva o grafo completo (apenas features extraídas)
-    - Usa preparação centralizada
-    - Modelo leve (~5MB ao invés de 1.4GB)
+    - Modelo leve (~3-5MB ao invés de 1.4GB)
     """
     inicio = time.time()
     
@@ -40,11 +40,18 @@ def treinar_modelo(
         print(f'Modo: SEM features de grafo (básico)')
     print(f'{"="*60}\n')
     
-    # ✅ USAR PREPARAÇÃO CENTRALIZADA
+    # ✅ EXTRAIR FEATURES DO GRAFO ANTES (se usar_grafo=True)
+    if usar_grafo and grafo is not None:
+        print('Extraindo features do grafo...')
+        tempo_extracao = time.time()
+        df = grafo.extrair_features_dataframe(df)
+        print(f'Features extraídas em {time.time() - tempo_extracao:.2f}s')
+    
+    # ✅ PREPARAR DADOS SEM PASSAR O GRAFO
     df_preparado, label_encoders = preparar_para_predicao(
         df, 
-        usar_grafo=usar_grafo, 
-        grafo=grafo
+        usar_grafo=False,  # Features já foram extraídas acima
+        grafo=None         # Não passar o grafo
     )
     
     seed = 4224
@@ -158,7 +165,7 @@ def treinar_modelo(
         print(f'Tamanho do arquivo: {tamanho_mb:.2f} MB')
         
         if tamanho_mb > 100:
-            print(f'⚠️ AVISO: Modelo muito grande! Deveria ter ~5-10MB')
+            print(f'⚠️ AVISO: Modelo muito grande! Deveria ter ~3-5MB')
     
     tempo_total = time.time() - inicio
     print(f'\nTempo de execucao: {tempo_total:.2f} segundos')
@@ -166,12 +173,12 @@ def treinar_modelo(
     return modelo_cluster
 
 
-def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.ndarray:
+def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame, grafo: Optional[ClusterGraph] = None) -> np.ndarray:
     """
     Faz predições usando modelo treinado.
     
     IMPORTANTE: Se o modelo foi treinado COM grafo, você precisa 
-    passar um grafo construído externamente.
+    passar um grafo construído externamente para extrair features.
     """
     inicio = time.time()
     
@@ -180,10 +187,15 @@ def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.nda
     
     print('\nFazendo predicoes...')
     
-    # ✅ PREPARAR DADOS (sem grafo, pois não foi salvo)
+    # ✅ EXTRAIR FEATURES DO GRAFO (se necessário)
+    if usar_grafo and grafo is not None:
+        print('Extraindo features do grafo para predição...')
+        df_novos_dados = grafo.extrair_features_dataframe(df_novos_dados)
+    
+    # ✅ PREPARAR DADOS (sem grafo, pois features já foram extraídas)
     df_preparado, _ = preparar_para_predicao(
         df_novos_dados, 
-        usar_grafo=False,  # Grafo não está disponível
+        usar_grafo=False,  # Features já extraídas
         grafo=None,
         label_encoders=label_encoders
     )
