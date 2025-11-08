@@ -238,10 +238,15 @@ def prever_dados(modelo, df_2026, usar_grafo=True, grafo=None):
     
     # Fazer previsão
     try:
-        if 'modelo' in modelo:
-            risco_previsto = modelo['modelo'].predict(X_pred)
-        else:
+        if 'modelo' not in modelo:
             raise ValueError('Modelo não contém "modelo"')
+        
+        if 'scaler' not in modelo:
+            raise ValueError('Modelo não contém "scaler"')
+        
+        # CRÍTICO: Aplicar StandardScaler antes da predição
+        X_pred_scaled = modelo['scaler'].transform(X_pred)
+        risco_previsto = modelo['modelo'].predict(X_pred_scaled)
         
         print(f'✓ Previsão realizada!')
         print(f'  Risco - Min: {risco_previsto.min():.2f}, Max: {risco_previsto.max():.2f}, Média: {risco_previsto.mean():.2f}')
