@@ -20,10 +20,11 @@ def check_errors(df):
 
     return df
 
-'''
-Checagem de erros para a conexão com a lista de CSVs
-'''
 def check_errors_csv_list(df_list):
+    '''
+    Checagem de erros para a conexão com a lista de CSVs
+    '''
+
     clean_df_list = []
 
     for df in df_list:
