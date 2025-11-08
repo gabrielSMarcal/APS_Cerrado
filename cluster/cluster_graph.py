@@ -1,6 +1,7 @@
-import pandas as pd
 import numpy as np
-from typing import Tuple, Optional
+import pandas as pd
+from typing import Tuple
+
 from models.TAD.ClusterGraph import ClusterGraph
 
 
@@ -32,6 +33,7 @@ def construir_grafo_temporal(df: pd.DataFrame, threshold_dias: int = 7) -> Clust
         df: DataFrame com dados de incêndio
         threshold_dias: Diferença máxima em dias para conexão
     '''
+    
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
         df,
@@ -82,6 +84,7 @@ def analisar_regioes_criticas(grafo: ClusterGraph, df: pd.DataFrame, percentil: 
         df: DataFrame original
         percentil: Percentil para definir regiões críticas
     '''
+    
     regioes = grafo.identificar_regioes_criticas(percentil)
     
     if not regioes:
@@ -122,10 +125,11 @@ def preparar_dados_com_grafo(
         threshold_dias: Diferença máxima em dias para conexão temporal
         tipo_grafo: Tipo de grafo ('espacial', 'temporal', 'hibrido')
     '''
-    print(f'\n{"="*60}')
-    print(f'Preparando dados com grafo tipo: {tipo_grafo}')
-    print(f'{"="*60}')
-    
+
+    print(f"\n{'='*60}")
+    print(f"Preparando dados com grafo tipo: {tipo_grafo}")
+    print(f"{'='*60}")
+
     # Construir grafo baseado no tipo especificado
     if tipo_grafo == 'espacial':
         grafo = construir_grafo_espacial(df, threshold_km)
@@ -136,10 +140,10 @@ def preparar_dados_com_grafo(
     
     # Extrair features do grafo
     df_com_features = extrair_features_grafo(grafo, df)
-    
-    print(f'\nFeatures do grafo adicionadas ao DataFrame')
-    print(f'Shape do DataFrame: {df_com_features.shape}')
-    
+
+    print(f"\nFeatures do grafo adicionadas ao DataFrame")
+    print(f"Shape do DataFrame: {df_com_features.shape}")
+
     return df_com_features, grafo
 
 
@@ -147,6 +151,7 @@ def calcular_estatisticas_grafo(grafo: ClusterGraph) -> dict:
     '''
     Calcula estatísticas descritivas do grafo.
     '''
+    
     vertices = grafo.get_pontos()
     
     if not vertices:
@@ -178,22 +183,22 @@ def imprimir_estatisticas_grafo(grafo: ClusterGraph) -> None:
     stats = calcular_estatisticas_grafo(grafo)
     
     if not stats:
-        print('Grafo vazio, sem estatísticas para exibir.')
+        print("Grafo vazio, sem estatísticas para exibir.")
         return
 
-    print(f'\n{"="*60}')
-    print(f'ESTATÍSTICAS DO GRAFO')
-    print(f'{"="*60}')
-    print(f'Número de vértices: {stats["num_vertices"]}')
-    print(f'Número de arestas: {stats["num_arestas"]}')
-    print(f'Densidade do grafo: {stats["densidade"]:.4f}')
-    print(f'\nGrau dos vértices:')
-    print(f'  - Médio: {stats["grau_medio"]:.2f}')
-    print(f'  - Mínimo: {stats["grau_min"]}')
-    print(f'  - Máximo: {stats["grau_max"]}')
-    print(f'\nCentralidade média: {stats["centralidade_media"]:.4f}')
-    print(f'Coeficiente de clustering médio: {stats["coef_clustering_medio"]:.4f}')
-    print(f'{"="*60}\n')
+    print(f"\n{'='*60}")
+    print(f"ESTATÍSTICAS DO GRAFO")
+    print(f"{'='*60}")
+    print(f"Número de vértices: {stats['num_vertices']}")
+    print(f"Número de arestas: {stats['num_arestas']}")
+    print(f"Densidade do grafo: {stats['densidade']:.4f}")
+    print(f"\nGrau dos vértices:")
+    print(f"  - Médio: {stats['grau_medio']:.2f}")
+    print(f"  - Mínimo: {stats['grau_min']}")
+    print(f"  - Máximo: {stats['grau_max']}")
+    print(f"\nCentralidade média: {stats['centralidade_media']:.4f}")
+    print(f"Coeficiente de clustering médio: {stats['coef_clustering_medio']:.4f}")
+    print(f"{'='*60}\n")
 
 
 def otimizar_thresholds(
@@ -210,15 +215,16 @@ def otimizar_thresholds(
         threshold_km_range: Lista de valores de threshold_km para testar
         threshold_dias_range: Lista de valores de threshold_dias para testar
     '''
-    print(f'\n{"="*60}')
-    print(f'OTIMIZANDO THRESHOLDS DO GRAFO')
-    print(f'{"="*60}')
-    
+
+    print(f"\n{'='*60}")
+    print(f"OTIMIZANDO THRESHOLDS DO GRAFO")
+    print(f"{'='*60}")
+
     resultados = []
     
     for threshold_km in threshold_km_range:
         for threshold_dias in threshold_dias_range:
-            print(f'\nTestando: threshold_km={threshold_km}, threshold_dias={threshold_dias}')
+            print(f"\nTestando: threshold_km={threshold_km}, threshold_dias={threshold_dias}")
             
             grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias)
             stats = calcular_estatisticas_grafo(grafo)
@@ -246,12 +252,12 @@ def otimizar_thresholds(
     resultados.sort(key=lambda x: x['score'], reverse=True)
     melhor = resultados[0]
 
-    print(f'\n{"="*60}')
-    print(f'MELHOR CONFIGURAÇÃO ENCONTRADA')
-    print(f'{"="*60}')
-    print(f'Threshold KM: {melhor["threshold_km"]}')
-    print(f'Threshold Dias: {melhor["threshold_dias"]}')
-    print(f'Score: {melhor["score"]:.4f}')
-    print(f'{"="*60}\n')
+    print(f"\n{'='*60}")
+    print(f"MELHOR CONFIGURAÇÃO ENCONTRADA")
+    print(f"{'='*60}")
+    print(f"Threshold KM: {melhor['threshold_km']}")
+    print(f"Threshold Dias: {melhor['threshold_dias']}")
+    print(f"Score: {melhor['score']:.4f}")
+    print(f"{'='*60}\n")
 
     return melhor['threshold_km'], melhor['threshold_dias'], melhor['stats']

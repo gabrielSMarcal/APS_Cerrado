@@ -4,11 +4,11 @@ import pickle
 import time
 from datetime import datetime
 from cluster.cluster_utils import preparar_dados
-from cluster.cluster import criacao_variaveis_mes
+from cluster.preparacao_dados import criar_variaveis_temporais
 from data.connection import connection
 from models.TAD.ClusterGraph import ClusterGraph
 
-def carregar_modelo(caminho_modelo='./modelo_completo_grafo.pkl'):
+def carregar_modelo(caminho_modelo='./source/modelo_completo_grafo.pkl'):
     '''
     Carrega o modelo treinado
     '''
@@ -257,7 +257,7 @@ def preparar_dados_com_grafo(df, modelo_cluster):
     municipio_original = df_copy['Municipio'].copy()
     
     # Criar variáveis dummy para os meses
-    df_copy = criacao_variaveis_mes(df_copy)
+    df_copy = criar_variaveis_temporais(df_copy)
     
     # Garantir que a coluna 'Data' esteja no formato datetime
     if df_copy['Data'].dtype == 'object':

@@ -1,22 +1,15 @@
 import pandas as pd
-import numpy as np
-import pickle
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 
-from data.connection import connection
-from cluster.cluster import criacao_variaveis_mes
+from cluster.preparacao_dados import criar_variaveis_temporais
 
 def preparar_features(df):
-    
     '''
     Preparar as features para o modelo de predição
     '''
     
     df_copy = df.copy()
-    df_copy = criacao_variaveis_mes(df_copy)
+    df_copy = criar_variaveis_temporais(df_copy)
     
     if df_copy['Data'].dtype == 'object':
         df_copy['Data'] = pd.to_datetime(df_copy['Data'])

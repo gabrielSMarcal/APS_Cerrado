@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.calibration import LabelEncoder
-from cluster.cluster import criacao_variaveis_mes
+from cluster.preparacao_dados import criar_variaveis_temporais
 
 
 def preparar_dados(df, modelo_cluster=None):
@@ -12,7 +12,7 @@ def preparar_dados(df, modelo_cluster=None):
     df_copy = df.copy()
     
     # Criar variáveis dummy para os meses
-    df_copy = criacao_variaveis_mes(df_copy)
+    df_copy = criar_variaveis_temporais(df_copy)
     
     # Garantir que a coluna 'Data' esteja no formato datetime
     if df_copy['Data'].dtype == 'object':

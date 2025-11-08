@@ -1,12 +1,10 @@
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_samples, silhouette_score
+from sklearn.metrics import silhouette_score
 from typing import Optional, Tuple
 
 from models.TAD.ClusterGraph import ClusterGraph
@@ -58,32 +56,30 @@ def encontrar_cluster(X_scaled, k_range=range(2, 20), salvar_grafico: bool = Tru
         
         # Salvar gráfico
         plt.savefig('graficos_clustering.png', dpi=300, bbox_inches='tight')
-        print("✅ Gráfico salvo em 'graficos_clustering.png'")
+        print("Gráfico salvo em 'graficos_clustering.png'")
         
         plt.close()
     
     melhor_k = k_range[np.argmax(silhuetas)]
-    print(f'Melhor número de clusters (k) baseado na silhueta: {melhor_k}')
+    print(f"Melhor número de clusters (k) baseado na silhueta: {melhor_k}")
     if len(silhuetas) > 10:
-        print(f'Silhouette Score em k=12: {silhuetas[10]:.4f}')
+        print(f"Silhouette Score em k=12: {silhuetas[10]:.4f}")
     
     return melhor_k, silhuetas, inercias, k_range
 
 
-def aplicar_clustering(
-    df, 
-    n_clusters: int = 12, 
-    usar_grafo: bool = False, 
-    grafo: Optional[ClusterGraph] = None
-) -> Tuple[pd.DataFrame, KMeans, StandardScaler, list]:
-    """Aplica clustering usando módulo de preparação centralizado."""
-    print(f'\n{"="*60}')
-    print(f'APLICANDO CLUSTERING (k={n_clusters})')
+def aplicar_clustering(df, n_clusters: int = 12, usar_grafo: bool = False, grafo: Optional[ClusterGraph] = None) -> Tuple[pd.DataFrame, KMeans, StandardScaler, list]:
+    '''
+    Aplica clustering usando módulo de preparação centralizado.
+    '''
+
+    print(f"\n{'='*60}")
+    print(f"APLICANDO CLUSTERING (k={n_clusters})")
     if usar_grafo:
-        print(f'Modo: COM features de grafo')
+        print(f"Modo: COM features de grafo")
     else:
-        print(f'Modo: SEM features de grafo (original)')
-    print(f'{"="*60}\n')
+        print(f"Modo: SEM features de grafo (original)")
+    print(f"{'='*60}\n")
     
     # Usar função centralizada
     X, X_scaled, y, label_encoders, feature_names = preparar_para_clustering(
@@ -91,20 +87,20 @@ def aplicar_clustering(
     )
     
     # Aplicar KMeans
-    print(f'\nTreinando KMeans com {n_clusters} clusters...')
+    print(f"\nTreinando KMeans com {n_clusters} clusters...")
     kmeans = KMeans(n_clusters=n_clusters, random_state=657, n_init='auto')
     cluster_labels = kmeans.fit_predict(X_scaled)
     
     # Calcular score de silhueta
     silhouette_avg = silhouette_score(X_scaled, cluster_labels)
-    print(f'Silhouette Score: {silhouette_avg:.4f}')
+    print(f"Silhouette Score: {silhouette_avg:.4f}")
     
     # Adicionar cluster_id ao DataFrame
     df_resultado = df.copy()
     df_resultado['cluster_id'] = cluster_labels
     
     # Estatísticas dos clusters
-    print(f'\nDistribuição dos clusters:')
+    print(f"\nDistribuição dos clusters:")
     print(df_resultado['cluster_id'].value_counts().sort_index())
     
     # Criar scaler para retornar (compatibilidade)
@@ -118,10 +114,11 @@ def comparar_clustering_com_sem_grafo(df, grafo: ClusterGraph, n_clusters: int =
     '''
     Compara performance do clustering com e sem features de grafo.
     '''
-    print(f'\n{"="*60}')
-    print(f'COMPARAÇÃO: CLUSTERING COM vs SEM GRAFO')
-    print(f'{"="*60}\n')
     
+    print(f"\n{'='*60}")
+    print(f"COMPARAÇÃO: CLUSTERING COM vs SEM GRAFO")
+    print(f"{'='*60}\n")
+
     # Clustering sem grafo (original)
     df_sem_grafo, kmeans_sem, scaler_sem, features_sem = aplicar_clustering(
         df, n_clusters, usar_grafo=False, grafo=None
@@ -155,21 +152,21 @@ def comparar_clustering_com_sem_grafo(df, grafo: ClusterGraph, n_clusters: int =
         'features_adicionadas': len(features_com) - len(features_sem)
     }
 
-    print(f'\n{"="*60}')
-    print(f'RESULTADOS DA COMPARAÇÃO')
-    print(f'{"="*60}')
-    print(f'SEM Grafo:')
-    print(f'  - Silhouette Score: {silhouette_sem:.4f}')
-    print(f'  - Número de features: {len(features_sem)}')
-    print(f'\nCOM Grafo:')
-    print(f'  - Silhouette Score: {silhouette_com:.4f}')
-    print(f'  - Número de features: {len(features_com)}')
-    print(f'  - Features adicionadas: {len(features_com) - len(features_sem)}')
-    print(f'\nMelhoria:')
-    print(f'  - Absoluta: {resultados["melhoria"]:+.4f}')
-    print(f'  - Percentual: {resultados["melhoria_percentual"]:+.2f}%')
-    print(f'{"="*60}\n')
-    
+    print(f"\n{'='*60}")
+    print(f"RESULTADOS DA COMPARAÇÃO")
+    print(f"{'='*60}")
+    print(f"SEM Grafo:")
+    print(f"  - Silhouette Score: {silhouette_sem:.4f}")
+    print(f"  - Número de features: {len(features_sem)}")
+    print(f"\nCOM Grafo:")
+    print(f"  - Silhouette Score: {silhouette_com:.4f}")
+    print(f"  - Número de features: {len(features_com)}")
+    print(f"  - Features adicionadas: {len(features_com) - len(features_sem)}")
+    print(f"\nMelhoria:")
+    print(f"  - Absoluta: {resultados['melhoria']:+.4f}")
+    print(f"  - Percentual: {resultados['melhoria_percentual']:+.2f}%")
+    print(f"{'='*60}\n")
+
     return resultados
 
 

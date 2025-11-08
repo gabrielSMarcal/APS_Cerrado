@@ -1,9 +1,9 @@
-import pandas as pd
 
-'''
-Checagem de erros para a conexão com db_cerrado
-'''
 def check_errors(df):
+    '''
+    Checagem de erros para a conexão com db_cerrado
+    '''
+    
     drop_rows = df[df['DiaSemChuva'] == -999].index
     df = df.drop(drop_rows)
     

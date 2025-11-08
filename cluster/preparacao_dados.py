@@ -1,20 +1,15 @@
-"""
-Módulo centralizado para preparação de dados.
-Unifica todas as funções de preparação e transformação de dados.
-"""
-
 import pandas as pd
-import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from typing import Optional, Tuple, Dict
 from models.TAD.ClusterGraph import ClusterGraph
 
 
 def criar_variaveis_temporais(df: pd.DataFrame) -> pd.DataFrame:
-    """
+    '''
     Cria variáveis temporais (mês, ano, dia) a partir da coluna de data.
     Substitui criacao_variaveis_mes() com nome mais descritivo.
-    """
+    '''
+    
     df_copy = df.copy()
     
     # Identificar coluna de data
@@ -48,16 +43,10 @@ def codificar_categoricas(
     df: pd.DataFrame,
     label_encoders: Optional[Dict[str, LabelEncoder]] = None
 ) -> Tuple[pd.DataFrame, Dict[str, LabelEncoder]]:
-    """
+    '''
     Codifica colunas categóricas usando LabelEncoder.
+    '''
     
-    Args:
-        df: DataFrame a processar
-        label_encoders: Encoders existentes (para usar em predição)
-    
-    Returns:
-        DataFrame com colunas codificadas e dicionário de encoders
-    """
     df_copy = df.copy()
     
     if label_encoders is None:
@@ -94,10 +83,10 @@ def preparar_para_clustering(
     usar_grafo: bool = False,
     grafo: Optional[ClusterGraph] = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, Dict[str, LabelEncoder], list]:
-    """
+    '''
     Prepara dados especificamente para clustering.
-    Unifica preparar_dados() de cluster.py e cluster_utils.py
-    """
+    '''
+    
     # Criar variáveis temporais
     df_prep = criar_variaveis_temporais(df)
     
@@ -132,10 +121,10 @@ def preparar_para_predicao(
     grafo: Optional[ClusterGraph] = None,
     label_encoders: Optional[Dict[str, LabelEncoder]] = None
 ) -> Tuple[pd.DataFrame, Dict[str, LabelEncoder]]:
-    """
+    '''
     Prepara dados especificamente para predição.
-    Unifica preparar_features() de predicao.py e cluster_predicao.py
-    """
+    '''
+    
     # Criar variáveis temporais
     df_prep = criar_variaveis_temporais(df)
     
@@ -150,13 +139,11 @@ def preparar_para_predicao(
     return df_prep, encoders
 
 
-def validar_features(
-    df: pd.DataFrame,
-    feature_names: list
-) -> pd.DataFrame:
-    """
+def validar_features(df: pd.DataFrame, feature_names: list) -> pd.DataFrame:
+    '''
     Valida e reordena features para garantir compatibilidade com modelo treinado.
-    """
+    '''
+    
     # Adicionar features faltantes com zeros
     for feature in feature_names:
         if feature not in df.columns:

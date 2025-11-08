@@ -1,9 +1,10 @@
 import pandas as pd
 
-'''
-Formatão dos dados para a conexão do db_cerrado
-'''
 def format_csv(df):
+    '''
+    Formatão dos dados para a conexão do db_cerrado
+    '''
+    
     df = df.drop(['Satelite', 'Pais', 'Bioma'], axis=1)
     df['DataHora'] = pd.to_datetime(df['DataHora'], errors='coerce')
     df['Data'] = df['DataHora'].dt.date
@@ -11,10 +12,11 @@ def format_csv(df):
 
     return df
 
-'''
-Formatão dos dados para a conexão da lista de CSVs
-'''
 def format_csv_list(df_list):
+    '''
+    Formatão dos dados para a conexão da lista de CSVs
+    '''
+    
     clean_df_list = []
 
     for df in df_list:

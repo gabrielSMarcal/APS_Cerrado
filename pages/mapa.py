@@ -5,7 +5,7 @@ from app import app
 from models.MapaInterativo import MapaInterativo
 
 # Carregando o CSV de previsão
-mapa = MapaInterativo('data/treated_db/db_2026_com_grafo.csv')
+mapa = MapaInterativo('source/db_2026_com_grafo.csv')
 
 estados_df = mapa.obter_estados_disponiveis()
 
