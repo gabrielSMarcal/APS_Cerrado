@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from cluster.preparacao_dados import preparar_para_predicao, criar_variaveis_temporais
 from data.connection import connection
-from TAD.ClusterGraph import ClusterGraph
+from models.TAD.ClusterGraph import ClusterGraph
 
 def carregar_modelo(caminho_modelo='./source/modelo_completo_grafo.pkl'):
     '''

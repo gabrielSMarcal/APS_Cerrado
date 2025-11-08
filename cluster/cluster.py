@@ -7,7 +7,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from typing import Optional, Tuple
 
-from TAD.ClusterGraph import ClusterGraph
+from models.TAD.ClusterGraph import ClusterGraph
 from cluster.preparacao_dados import preparar_para_clustering
 
 

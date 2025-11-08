@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Tuple
 
-from TAD.ClusterGraph import ClusterGraph
+from models.TAD.ClusterGraph import ClusterGraph
 
 
 def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0) -> ClusterGraph:
