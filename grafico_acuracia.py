@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-from cluster.cluster_utils import preparar_dados
+from cluster.preparacao_dados import preparar_para_predicao, validar_features
 from cluster_predicao import treinar_modelo
 from data.connection import connection 
 
@@ -37,45 +37,62 @@ def carregar_modelo_ou_treinar(model_path=MODEL_PATH):
     if df_hist is None or len(df_hist) == 0:
         raise RuntimeError('Dados históricos vazios — não é possível treinar o modelo automaticamente.')
 
-    modelo_cluster = treinar_modelo(df_hist)
-
-    # garantir pasta
-    os.makedirs(os.path.dirname(model_path) or '.', exist_ok=True)
-    with open(model_path, 'wb') as f:
-        pickle.dump(modelo_cluster, f)
-    print(f'Modelo treinado e salvo em {model_path}')
+    modelo_cluster = treinar_modelo(df_hist, usar_grafo=True, salvar_modelo=True, caminho_modelo=model_path)
 
     return modelo_cluster
 
 
 def preparar_e_prever_tudo(df_raw, modelo_cluster):
+    '''
+    Prepara dados e faz predições usando a função centralizada.
+    '''
     df = df_raw.copy()
-    df['Data'] = pd.to_datetime(df['Data'])
+    df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
     df['Ano'] = df['Data'].dt.year
 
-    df_preparado, extras = preparar_dados(df, modelo_cluster=modelo_cluster)
+    # Usar a função centralizada de preparação
+    usar_grafo = modelo_cluster.get('usar_grafo', False)
+    grafo = modelo_cluster.get('grafo', None)
+    label_encoders = modelo_cluster.get('label_encoders', None)
+    
+    df_preparado, _ = preparar_para_predicao(
+        df,
+        usar_grafo=usar_grafo,
+        grafo=grafo,
+        label_encoders=label_encoders
+    )
 
-    # copiar colunas úteis
+    # Copiar colunas importantes para o resultado final
     keys_to_copy = ['Data', 'Latitude', 'Longitude', 'Estado', 'Municipio', 'RiscoFogo', 'Ano']
     df_preparado = df_preparado.reset_index(drop=True)
     df = df.reset_index(drop=True)
+    
     for k in keys_to_copy:
         if k in df.columns and k not in df_preparado.columns:
             df_preparado[k] = df[k]
 
-    feature_names = modelo_cluster.get('feature_names', [c for c in df_preparado.columns if c != 'RiscoFogo'])
-    features_disponiveis = [f for f in feature_names if f in df_preparado.columns]
-    if len(features_disponiveis) == 0:
-        raise RuntimeError('Nenhuma feature disponível após preparar_dados.')
+    # Obter features do modelo
+    feature_names = modelo_cluster.get('feature_names', [])
+    
+    if not feature_names:
+        raise RuntimeError('modelo_cluster não contém "feature_names".')
+    
+    # Validar e reordenar features
+    if 'RiscoFogo' in df_preparado.columns:
+        X_all = df_preparado.drop(columns=['RiscoFogo'])
+    else:
+        X_all = df_preparado.copy()
+    
+    X_all = validar_features(X_all, feature_names)
 
-    X_all = df_preparado[features_disponiveis]
-
+    # Normalizar
     scaler = modelo_cluster.get('scaler', None)
     if scaler is not None:
         X_all_scaled = scaler.transform(X_all)
     else:
         X_all_scaled = X_all.values
 
+    # Predizer
     model = modelo_cluster.get('modelo')
     if model is None:
         raise RuntimeError('modelo_cluster não contém chave "modelo".')
@@ -84,7 +101,7 @@ def preparar_e_prever_tudo(df_raw, modelo_cluster):
     y_pred = np.clip(y_pred, 0, 100).round().astype(int)
     df_preparado['Risco_pred'] = y_pred
 
-    return df_preparado, features_disponiveis
+    return df_preparado, feature_names
 
 
 def calcular_metricas_por_ano(df_eval, y_col='RiscoFogo'):
@@ -215,6 +232,7 @@ def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
     print(f'Mapa 2025 salvo: {map_path}')
     return map_path
 
+
 def carregar_dados_csvs(pasta_csvs):
     import re
     arquivos = [os.path.join(pasta_csvs, f) for f in os.listdir(pasta_csvs) if f.endswith('.csv')]
@@ -222,11 +240,15 @@ def carregar_dados_csvs(pasta_csvs):
     for arq in arquivos:
         df = pd.read_csv(arq)
         # garante que a coluna Data é datetime
-        df['DataHora'] = pd.to_datetime(df['DataHora'], errors='coerce')
+        if 'DataHora' in df.columns:
+            df['Data'] = pd.to_datetime(df['DataHora'], errors='coerce')
+        elif 'Data' in df.columns:
+            df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
         # extrai o ano
-        df['Ano'] = df['DataHora'].dt.year
+        df['Ano'] = df['Data'].dt.year
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
+
 
 def gerar_heatmap(df, ano=None, saida=None):
     df_map = df.copy()
