@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Tuple
 
-from models.TAD.ClusterGraph import ClusterGraph
+from TAD.ClusterGraph import ClusterGraph
 
 
 def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0) -> ClusterGraph:
@@ -72,7 +72,9 @@ def extrair_features_grafo(grafo: ClusterGraph, df: pd.DataFrame) -> pd.DataFram
     Extrai features do grafo e adiciona ao DataFrame.
     '''
     
-    return grafo.extrair_features_dataframe(df)
+    df_features = grafo.extrair_features_dataframe(df)
+    
+    return df_features
 
 
 def analisar_regioes_criticas(grafo: ClusterGraph, df: pd.DataFrame, percentil: float = 90) -> pd.DataFrame:
@@ -139,7 +141,7 @@ def preparar_dados_com_grafo(
         grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias)
     
     # Extrair features do grafo
-    df_com_features = extrair_features_grafo(grafo, df)
+    df_com_features = grafo.extrair_features_dataframe(df)
 
     print(f"\nFeatures do grafo adicionadas ao DataFrame")
     print(f"Shape do DataFrame: {df_com_features.shape}")

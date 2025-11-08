@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from typing import Optional, Tuple, Dict
-from models.TAD.ClusterGraph import ClusterGraph
+from TAD.ClusterGraph import ClusterGraph
 
 
 def criar_variaveis_temporais(df: pd.DataFrame) -> pd.DataFrame:

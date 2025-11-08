@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 from typing import Optional, Tuple, Dict
 
-from models.TAD.ClusterGraph import ClusterGraph
+from TAD.ClusterGraph import ClusterGraph
 from cluster.preparacao_dados import preparar_para_predicao, validar_features
 
 

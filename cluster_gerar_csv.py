@@ -3,10 +3,9 @@ import numpy as np
 import pickle
 import time
 from datetime import datetime
-from cluster.cluster_utils import preparar_dados
-from cluster.preparacao_dados import criar_variaveis_temporais
+from cluster.preparacao_dados import preparar_para_predicao, criar_variaveis_temporais
 from data.connection import connection
-from models.TAD.ClusterGraph import ClusterGraph
+from TAD.ClusterGraph import ClusterGraph
 
 def carregar_modelo(caminho_modelo='./source/modelo_completo_grafo.pkl'):
     '''
@@ -80,7 +79,6 @@ def gerar_coordenada_interpolada(coords_freq, bounds, usar_hotspot=True):
         return coord['Latitude'], coord['Longitude'], coord['Estado'], coord['Municipio']
     else:
         # Gerar coordenada interpolada dentro dos bounds do cerrado
-        # Adicionar pequena variação nas coordenadas existentes
         idx = np.random.randint(0, len(coords_freq))
         coord_base = coords_freq.iloc[idx]
         
@@ -130,11 +128,10 @@ def gerar_dados_2026(padroes, total_registros=None):
         
         # Distribuir registros ao longo dos dias do mês
         for i in range(num_registros_mes):
-            # Escolher dia aleatório do mês
             dia = np.random.randint(1, dias_no_mes + 1)
             data = datetime(2026, mes, dia)
             
-            # 50% hotspot, 50% coordenadas interpoladas (para melhor distribuição)
+            # 50% hotspot, 50% coordenadas interpoladas
             usar_hotspot = np.random.random() < 0.5
             lat, lon, estado, municipio = gerar_coordenada_interpolada(coords_freq, bounds, usar_hotspot)
             
@@ -146,12 +143,10 @@ def gerar_dados_2026(padroes, total_registros=None):
             
             if len(stats) > 0:
                 stats = stats.iloc[0]
-                # Usar estatísticas históricas + variação
                 dias_sem_chuva = max(0, int(stats['DiaSemChuva'] + np.random.normal(0, 5)))
                 precipitacao = max(0, stats['Precipitacao'] + np.random.normal(0, 10))
                 frp = max(0, stats['FRP'] + np.random.normal(0, 20))
             else:
-                # Valores padrão se não tiver histórico
                 # Meses secos (maio-outubro): mais dias sem chuva
                 if mes in [5, 6, 7, 8, 9, 10]:
                     dias_sem_chuva = np.random.randint(15, 60)
@@ -174,8 +169,6 @@ def gerar_dados_2026(padroes, total_registros=None):
             })
     
     df_2026 = pd.DataFrame(registros)
-    
-    # Ordenar por data para ficar orgânico
     df_2026 = df_2026.sort_values('Data').reset_index(drop=True)
 
     print(f'\n✓ Gerados {len(df_2026):,} registros')
@@ -187,11 +180,6 @@ def gerar_dados_2026(padroes, total_registros=None):
 def construir_grafo_otimizado(df_2026, usar_grafo=True):
     '''
     Constrói o grafo de forma otimizada para grandes volumes de dados.
-    
-    Otimizações aplicadas com grafo:
-    - Limitar conexões por vértice (max_conexoes_por_vertice)
-    - Usar grid espacial para reduzir comparações
-    - Desabilitar progresso detalhado para grandes datasets
     '''
     
     if not usar_grafo:
@@ -201,111 +189,26 @@ def construir_grafo_otimizado(df_2026, usar_grafo=True):
     print(f'\n=== Construindo Grafo Otimizado ===')
     inicio = time.time()
     
-    # Criar grafo com parâmetros otimizados
     grafo = ClusterGraph()
     
-    # Parâmetros otimizados para performance
-    threshold_km = 100.0  # Aumentar threshold para reduzir número de arestas
-    threshold_dias = 14   # Aumentar janela temporal
-    max_conexoes = 30     # Limitar conexões por vértice
+    threshold_km = 100.0
+    threshold_dias = 14
 
-    print(f'Parâmetros: threshold_km={threshold_km}, threshold_dias={threshold_dias}, max_conexoes={max_conexoes}')
+    print(f'Parâmetros: threshold_km={threshold_km}, threshold_dias={threshold_dias}')
 
-    # Construir grafo (usa método otimizado internamente)
+    # ⚠️ REMOVER parâmetros se não existirem no método
     grafo.construir_grafo_dataframe(
         df_2026,
         threshold_km=threshold_km,
         threshold_dias=threshold_dias,
         usar_temporal=True,
-        usar_espacial=True,
-        max_conexoes_por_vertice=max_conexoes,
-        mostrar_progresso=True
+        usar_espacial=True
     )
     
+    tempo_construcao = time.time() - inicio
+    print(f'✓ Grafo construído em {tempo_construcao:.2f}s')
+    
     return grafo
-
-def extrair_features_grafo_otimizado(grafo, df_2026):
-    '''
-    Extrai features do grafo de forma otimizada.
-    '''
-    
-    if grafo is None:
-        print('\n[INFO] Grafo não disponível - pulando extração de features')
-        return df_2026
-    
-    print(f'\n=== Extraindo Features do Grafo ===')
-    inicio = time.time()
-    
-    # Extrair features (usa cache interno)
-    df_com_features = grafo.extrair_features_dataframe(df_2026, mostrar_progresso=True)
-    
-    tempo_extracao = time.time() - inicio
-    print(f'✓ Features extraídas em {tempo_extracao:.2f}s')
-    
-    return df_com_features
-
-def preparar_dados_com_grafo(df, modelo_cluster):
-    '''
-    Prepara os dados para o modelo, tratando valores desconhecidos nos LabelEncoders.
-    Esta é uma versão modificada que lida com valores não vistos durante o treinamento.
-    '''
-    
-    df_copy = df.copy()
-    
-    # Guardar Estado e Municipio originais antes de codificar
-    estado_original = df_copy['Estado'].copy()
-    municipio_original = df_copy['Municipio'].copy()
-    
-    # Criar variáveis dummy para os meses
-    df_copy = criar_variaveis_temporais(df_copy)
-    
-    # Garantir que a coluna 'Data' esteja no formato datetime
-    if df_copy['Data'].dtype == 'object':
-        df_copy['Data'] = pd.to_datetime(df_copy['Data'], errors='coerce')
-    
-    # Adicionar colunas de ano e dia do ano
-    df_copy['Ano'] = df_copy['Data'].dt.year
-    df_copy['DiaAno'] = df_copy['Data'].dt.dayofyear
-    
-    # Codificar colunas categóricas, tratando valores desconhecidos
-    if modelo_cluster and 'label_encoders' in modelo_cluster:
-        label_encoders = modelo_cluster['label_encoders']
-        
-        # Codificar Estado
-        if 'Estado' in df_copy.columns and 'Estado' in label_encoders:
-            le_estado = label_encoders['Estado']
-            # Mapear valores conhecidos, usar -1 para desconhecidos
-            estado_encoded = []
-            for estado in df_copy['Estado'].astype(str):
-                if estado in le_estado.classes_:
-                    estado_encoded.append(le_estado.transform([estado])[0])
-                else:
-                    # Usar o primeiro estado conhecido como fallback
-                    estado_encoded.append(le_estado.transform([le_estado.classes_[0]])[0])
-            df_copy['Estado_encoded'] = estado_encoded
-        
-        # Codificar Município
-        if 'Municipio' in df_copy.columns and 'Municipio' in label_encoders:
-            le_municipio = label_encoders['Municipio']
-            # Mapear valores conhecidos, usar -1 para desconhecidos
-            municipio_encoded = []
-            for municipio in df_copy['Municipio'].astype(str):
-                if municipio in le_municipio.classes_:
-                    municipio_encoded.append(le_municipio.transform([municipio])[0])
-                else:
-                    # Usar o primeiro município conhecido como fallback
-                    municipio_encoded.append(le_municipio.transform([le_municipio.classes_[0]])[0])
-            df_copy['Municipio_encoded'] = municipio_encoded
-    
-    # Restaurar Estado e Municipio originais
-    df_copy['Estado'] = estado_original
-    df_copy['Municipio'] = municipio_original
-    
-    # Remover colunas desnecessárias para previsão (mas manter Estado e Municipio originais)
-    colunas_remover = ['DataHora', 'Data']
-    df_preparado = df_copy.drop(columns=[col for col in colunas_remover if col in df_copy.columns])
-    
-    return df_preparado
 
 def prever_dados(modelo, df_2026, usar_grafo=True, grafo=None):
     '''
@@ -315,81 +218,56 @@ def prever_dados(modelo, df_2026, usar_grafo=True, grafo=None):
     print(f'\n=== Preparando Dados para Previsão ===')
     inicio_total = time.time()
     
-    # Se usar grafo, extrair features
-    if usar_grafo and grafo is not None:
-        df_2026 = extrair_features_grafo_otimizado(grafo, df_2026)
-    
-    # Preparar dados usando a função modificada
-    df_preparado = preparar_dados_com_grafo(df_2026, modelo_cluster=modelo)
+    # ✅ USAR FUNÇÃO CENTRALIZADA COM PARÂMETROS CORRETOS
+    df_preparado, _ = preparar_para_predicao(
+        df_2026,
+        usar_grafo=usar_grafo,
+        grafo=grafo,
+        label_encoders=modelo.get('label_encoders')
+    )
     
     # Obter features na ordem correta
     feature_names = modelo.get('feature_names', [])
     
-    # Verificar quais features estão disponíveis
-    features_disponiveis = [f for f in feature_names if f in df_preparado.columns]
-    print(f'Features disponíveis: {len(features_disponiveis)}/{len(feature_names)}')
-    
-    if len(features_disponiveis) < len(feature_names):
-        features_faltando = set(feature_names) - set(features_disponiveis)
-        print(f'Aviso: Features faltando: {features_faltando}')
-        # Adicionar features faltando com valor 0
-        for feature in features_faltando:
+    # Adicionar features faltando com valor 0
+    for feature in feature_names:
+        if feature not in df_preparado.columns:
             df_preparado[feature] = 0
-        features_disponiveis = feature_names
-
-    X_pred = df_preparado[features_disponiveis]
     
-    # Fazer previsão do RiscoFogo
+    X_pred = df_preparado[feature_names]
+    
+    # Fazer previsão
     try:
         if 'modelo' in modelo:
-            # Modelo de regressão - prevê RiscoFogo diretamente
             risco_previsto = modelo['modelo'].predict(X_pred)
-            print(f'✓ Previsão realizada com sucesso!')
-            print(f'  Risco previsto - Min: {risco_previsto.min():.2f}, Max: {risco_previsto.max():.2f}, Média: {risco_previsto.mean():.2f}')
-        elif 'kmeans' in modelo:
-            # Modelo de clustering - mapeia clusters para risco
-            clusters = modelo['kmeans'].predict(X_pred)
-            if 'cluster_stats' in modelo:
-                cluster_risk_map = {}
-                for cluster_id, stats in modelo['cluster_stats'].items():
-                    cluster_risk_map[cluster_id] = stats.get('RiscoFogo_mean', 0.5)
-                risco_previsto = np.array([cluster_risk_map.get(c, 0.5) for c in clusters])
-            else:
-                max_cluster = clusters.max()
-                risco_previsto = (clusters / max_cluster if max_cluster > 0 else 0.5)
-            print(f'✓ Previsão realizada com sucesso!')
         else:
-            raise ValueError('Modelo não contém "modelo" ou "kmeans"')
+            raise ValueError('Modelo não contém "modelo"')
+        
+        print(f'✓ Previsão realizada!')
+        print(f'  Risco - Min: {risco_previsto.min():.2f}, Max: {risco_previsto.max():.2f}, Média: {risco_previsto.mean():.2f}')
+        
     except Exception as e:
         print(f'Erro na previsão: {e}')
         import traceback
         traceback.print_exc()
         risco_previsto = np.full(len(df_2026), 0.5)
     
-    # Adicionar RiscoFogo ao dataframe
-    # Normalizar valores previstos para faixa 0-100
-    risco_min = risco_previsto.min()
-    risco_max = risco_previsto.max()
+    # Normalização
+    risco_min, risco_max = risco_previsto.min(), risco_previsto.max()
     
-    if risco_min < 0 or risco_max > 100:
-        # Normalizar para 0-100 se os valores estão fora da faixa esperada
+    if risco_max <= 1.0:
+        risco_normalizado = (risco_previsto * 100).clip(0, 100)
+    elif risco_min < 0 or risco_max > 100:
         if risco_max > risco_min:
             risco_normalizado = ((risco_previsto - risco_min) / (risco_max - risco_min)) * 100
         else:
             risco_normalizado = np.full(len(risco_previsto), 50.0)
-        print(f'  Risco normalizado para 0-100 - Min: {risco_normalizado.min():.2f}, Max: {risco_normalizado.max():.2f}, Média: {risco_normalizado.mean():.2f}')
-        df_2026['RiscoFogo'] = risco_normalizado
-    elif risco_max <= 1.0:
-        # Se está em escala 0-1, converter para 0-100
-        df_2026['RiscoFogo'] = (risco_previsto * 100).clip(0, 100)
     else:
-        # Já está em escala 0-100
-        df_2026['RiscoFogo'] = risco_previsto.clip(0, 100)
+        risco_normalizado = risco_previsto.clip(0, 100)
     
-    # Converter para inteiro
-    df_2026['RiscoFogo'] = np.round(df_2026['RiscoFogo']).astype(int)
+    df_2026['RiscoFogo'] = np.round(risco_normalizado).astype(int)
     
-    # Ajustar sutilmente variáveis baseado no RiscoFogo previsto
+    # Ajustar variáveis baseado no RiscoFogo
     df_2026['DiaSemChuva'] = (df_2026['DiaSemChuva'] * (1 + df_2026['RiscoFogo'] / 100 * 0.3)).astype(int)
     df_2026['Precipitacao'] = df_2026['Precipitacao'] * (1 - df_2026['RiscoFogo'] / 100 * 0.2)
     df_2026['FRP'] = df_2026['FRP'] * (1 + df_2026['RiscoFogo'] / 100 * 1.5)
@@ -421,9 +299,8 @@ def salvar_previsao(df_previsao, nome_arquivo='previsao_2026.csv'):
     df_final.to_csv(nome_arquivo, index=False)
     print(f'\n✓ Previsão salva em "{nome_arquivo}"')
     print(f'  Total de registros: {len(df_final):,}')
-    print(f'  Colunas: {list(df_final.columns)}')
     
-    # Estatísticas resumidas
+    # Estatísticas
     print(f'\nEstatísticas do RiscoFogo:')
     print(f'  Média: {df_final["RiscoFogo"].mean():.2f}')
     print(f'  Mediana: {df_final["RiscoFogo"].median():.2f}')
@@ -436,10 +313,7 @@ def main(usar_grafo=True, total_registros=None):
     '''
     print('='*80)
     print('GERAÇÃO DE PREVISÕES PARA 2026 - RISCO DE INCÊNDIO NO CERRADO')
-    if usar_grafo:
-        print('Modo: COM Grafo (features espaciais e temporais)')
-    else:
-        print('Modo: SEM Grafo (apenas features originais)')
+    print(f'Modo: {"COM" if usar_grafo else "SEM"} Grafo')
     print('='*80)
     
     inicio_geral = time.time()
@@ -463,13 +337,13 @@ def main(usar_grafo=True, total_registros=None):
     print('\n[4/6] Gerando dados para 2026...')
     df_2026 = gerar_dados_2026(padroes, total_registros)
     
-    # 5. Construir grafo (se habilitado)
+    # 5. Construir grafo
     grafo = None
     if usar_grafo:
         print('\n[5/6] Construindo grafo...')
         grafo = construir_grafo_otimizado(df_2026, usar_grafo=True)
     else:
-        print('\n[5/6] Grafo desabilitado - pulando construção')
+        print('\n[5/6] Grafo desabilitado')
     
     # 6. Fazer previsões
     print('\n[6/6] Gerando previsões...')
@@ -477,7 +351,7 @@ def main(usar_grafo=True, total_registros=None):
     
     # 7. Salvar resultados
     sufixo = '_com_grafo' if usar_grafo else '_sem_grafo'
-    nome_arquivo = f'previsao_2026{sufixo}.csv'
+    nome_arquivo = f'./source/previsao_2026{sufixo}.csv'
     salvar_previsao(df_previsao, nome_arquivo)
     
     tempo_total = time.time() - inicio_geral
@@ -488,6 +362,4 @@ def main(usar_grafo=True, total_registros=None):
     return df_previsao
 
 if __name__ == '__main__':
-    # Executar com grafo (padrão)
-    # Para desabilitar o grafo e ter execução mais rápida, use: main(usar_grafo=False)
     df_resultado = main(usar_grafo=True)

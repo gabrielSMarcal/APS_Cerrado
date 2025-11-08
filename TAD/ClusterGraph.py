@@ -1,7 +1,7 @@
 from typing import Dict, List, Any, Tuple
 import pandas as pd
 import numpy as np
-from models.TAD.Graph import Graph
+from TAD.Graph import Graph
 from math import radians, sin, cos, sqrt, atan2
 
 class ClusterGraph(Graph):
