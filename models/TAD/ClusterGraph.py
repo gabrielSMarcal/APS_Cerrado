@@ -110,22 +110,34 @@ class ClusterGraph(Graph):
         df['grid_lon'] = (df['Longitude'] / grid_size_deg).astype(int)
         df['periodo_temporal'] = (df['Data'] - df['Data'].min()).dt.days // janela_temporal_dias
         
-        agregacao = df.groupby(['grid_lat', 'grid_lon', 'periodo_temporal']).agg({
+        agg_dict = {
             'Latitude': 'mean',
             'Longitude': 'mean',
             'Data': 'mean',
-            'RiscoFogo': 'mean',
             'Precipitacao': 'mean',
             'DiaSemChuva': 'mean',
             'Estado': lambda x: x.mode()[0] if len(x.mode()) > 0 else x.iloc[0],
             'Municipio': lambda x: x.mode()[0] if len(x.mode()) > 0 else x.iloc[0]
-        }).reset_index()
+        }
+        
+        if 'RiscoFogo' in df.columns:
+            agg_dict['RiscoFogo'] = 'mean'
+        
+        agregacao = df.groupby(['grid_lat', 'grid_lon', 'periodo_temporal']).agg(agg_dict).reset_index()
         
         agregacao['num_registros'] = df.groupby(['grid_lat', 'grid_lon', 'periodo_temporal']).size().values
         
-        agregacao.columns = ['grid_lat', 'grid_lon', 'periodo_temporal', 'latitude', 'longitude', 
-                             'data', 'risco_fogo', 'precipitacao', 'dias_sem_chuva', 
-                             'estado', 'municipio', 'num_registros']
+        colunas_base = ['grid_lat', 'grid_lon', 'periodo_temporal', 'latitude', 'longitude', 
+                        'data', 'precipitacao', 'dias_sem_chuva', 'estado', 'municipio']
+        
+        if 'RiscoFogo' in df.columns:
+            colunas_base.insert(6, 'risco_fogo')
+        
+        colunas_base.append('num_registros')
+        agregacao.columns = colunas_base
+        
+        if 'risco_fogo' not in agregacao.columns:
+            agregacao['risco_fogo'] = 0
         
         return agregacao.reset_index(drop=True)
     
