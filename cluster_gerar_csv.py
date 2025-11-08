@@ -7,7 +7,7 @@ from cluster.preparacao_dados import preparar_para_predicao, criar_variaveis_tem
 from data.connection import connection
 from models.TAD.ClusterGraph import ClusterGraph
 
-def carregar_modelo(caminho_modelo='./source/modelo_completo_grafo.pkl'):
+def carregar_modelo(caminho_modelo='./source/modelo_random_forest.pkl'):
     '''
     Carrega o modelo treinado
     '''
