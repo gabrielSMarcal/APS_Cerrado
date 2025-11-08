@@ -5,7 +5,7 @@ from typing import Tuple
 from models.TAD.ClusterGraph import ClusterGraph
 
 
-def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0, grid_size_km: float = 25.0) -> ClusterGraph:
+def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0, grid_size_km: float = 50.0) -> ClusterGraph:
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
         df,
@@ -13,13 +13,14 @@ def construir_grafo_espacial(df: pd.DataFrame, threshold_km: float = 50.0, grid_
         threshold_dias=0,
         usar_temporal=False,
         usar_espacial=True,
+        max_conexoes_por_vertice=10,
         grid_size_km=grid_size_km,
         janela_temporal_dias=30
     )
     return grafo
 
 
-def construir_grafo_temporal(df: pd.DataFrame, threshold_dias: int = 7, janela_temporal_dias: int = 7) -> ClusterGraph:
+def construir_grafo_temporal(df: pd.DataFrame, threshold_dias: int = 7, janela_temporal_dias: int = 14) -> ClusterGraph:
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
         df,
@@ -27,7 +28,8 @@ def construir_grafo_temporal(df: pd.DataFrame, threshold_dias: int = 7, janela_t
         threshold_dias=threshold_dias,
         usar_temporal=True,
         usar_espacial=False,
-        grid_size_km=50.0,
+        max_conexoes_por_vertice=10,
+        grid_size_km=100.0,
         janela_temporal_dias=janela_temporal_dias
     )
     return grafo
@@ -37,8 +39,9 @@ def construir_grafo_hibrido(
     df: pd.DataFrame, 
     threshold_km: float = 50.0, 
     threshold_dias: int = 7,
-    grid_size_km: float = 25.0,
-    janela_temporal_dias: int = 7
+    grid_size_km: float = 50.0,
+    janela_temporal_dias: int = 14,
+    max_conexoes_por_vertice: int = 10
 ) -> ClusterGraph:
     grafo = ClusterGraph()
     grafo.construir_grafo_dataframe(
@@ -47,6 +50,7 @@ def construir_grafo_hibrido(
         threshold_dias=threshold_dias,
         usar_temporal=True,
         usar_espacial=True,
+        max_conexoes_por_vertice=max_conexoes_por_vertice,
         grid_size_km=grid_size_km,
         janela_temporal_dias=janela_temporal_dias
     )
@@ -88,8 +92,9 @@ def preparar_dados_com_grafo(
     threshold_km: float = 50.0,
     threshold_dias: int = 7,
     tipo_grafo: str = 'hibrido',
-    grid_size_km: float = 25.0,
-    janela_temporal_dias: int = 7
+    grid_size_km: float = 50.0,
+    janela_temporal_dias: int = 14,
+    max_conexoes_por_vertice: int = 10
 ) -> Tuple[pd.DataFrame, ClusterGraph]:
 
     print(f"\n{'='*60}")
@@ -101,7 +106,7 @@ def preparar_dados_com_grafo(
     elif tipo_grafo == 'temporal':
         grafo = construir_grafo_temporal(df, threshold_dias, janela_temporal_dias)
     else:
-        grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias, grid_size_km, janela_temporal_dias)
+        grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias, grid_size_km, janela_temporal_dias, max_conexoes_por_vertice)
     
     df_com_features = grafo.extrair_features_dataframe(df)
 
@@ -161,8 +166,9 @@ def otimizar_thresholds(
     df: pd.DataFrame,
     threshold_km_range: list = [30, 50, 100],
     threshold_dias_range: list = [3, 7, 14],
-    grid_size_km: float = 25.0,
-    janela_temporal_dias: int = 7
+    grid_size_km: float = 50.0,
+    janela_temporal_dias: int = 14,
+    max_conexoes_por_vertice: int = 10
 ) -> Tuple[float, int, dict]:
 
     print(f"\n{'='*60}")
@@ -175,7 +181,7 @@ def otimizar_thresholds(
         for threshold_dias in threshold_dias_range:
             print(f"\nTestando: threshold_km={threshold_km}, threshold_dias={threshold_dias}")
             
-            grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias, grid_size_km, janela_temporal_dias)
+            grafo = construir_grafo_hibrido(df, threshold_km, threshold_dias, grid_size_km, janela_temporal_dias, max_conexoes_por_vertice)
             stats = calcular_estatisticas_grafo(grafo)
             
             if stats:

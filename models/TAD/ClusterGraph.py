@@ -51,10 +51,10 @@ class ClusterGraph(Graph):
         threshold_dias: int = 7,
         usar_temporal: bool = True,
         usar_espacial: bool = True,
-        max_conexoes_por_vertice: int = 50,
+        max_conexoes_por_vertice: int = 10,
         mostrar_progresso: bool = True,
-        grid_size_km: float = 25.0,
-        janela_temporal_dias: int = 7
+        grid_size_km: float = 50.0,
+        janela_temporal_dias: int = 14
     ) -> None:
         
         if 'Data' not in df.columns and 'DataHora' in df.columns:
@@ -64,11 +64,13 @@ class ClusterGraph(Graph):
 
         if mostrar_progresso:
             print(f'Agregando {len(df)} registros em células espaciais-temporais...')
+            print(f'Parâmetros: grid_size={grid_size_km}km, janela_temporal={janela_temporal_dias}dias')
         
         df_agregado = self.__agregar_dados(df, grid_size_km, janela_temporal_dias)
         
         if mostrar_progresso:
-            print(f'Reduzido para {len(df_agregado)} vértices agregados')
+            reducao = (1 - len(df_agregado) / len(df)) * 100
+            print(f'Reduzido para {len(df_agregado)} vértices ({reducao:.1f}% de redução)')
 
         for idx, row in df_agregado.iterrows():
             dados = {
@@ -92,7 +94,7 @@ class ClusterGraph(Graph):
         )
         
         if mostrar_progresso:
-            print(f'Grafo construído: {len(self.get_pontos())} vértices, {self.total_ponto_con()} arestas')
+            print(f'Grafo: {len(self.get_pontos())} vértices, {self.total_ponto_con()} arestas')
     
     def __agregar_dados(
         self, 
@@ -141,7 +143,7 @@ class ClusterGraph(Graph):
         total_vertices = len(vertices)
         
         for i, v1 in enumerate(vertices):
-            if mostrar_progresso and i % 100 == 0:
+            if mostrar_progresso and i % 500 == 0:
                 print(f'Conectando vértice {i+1}/{total_vertices}')
                 
             dados_v1 = self.__vertice_data[v1]
@@ -266,15 +268,54 @@ class ClusterGraph(Graph):
     
     def extrair_features_dataframe(self, df_original: pd.DataFrame) -> pd.DataFrame:
         df = df_original.copy()
-        
-        features_list = []
         vertices = self.get_pontos()
         
-        for v_id in vertices:
-            features = self.extrair_features_vertice(v_id)
-            features_list.append(features)
+        print(f'Extraindo features de {len(vertices)} vértices...')
         
-        df_features = pd.DataFrame(features_list)
+        graus = []
+        pesos_medios = []
+        riscos_vizinhos = []
+        coefs_clustering = []
+        centralidades = []
+        riscos_propagacao = []
+        
+        for i, v_id in enumerate(vertices):
+            if i % 1000 == 0 and i > 0:
+                print(f'  Processado {i}/{len(vertices)} vértices')
+            
+            vizinhos = self.get_vizinhos(v_id)
+            grau = len(vizinhos)
+            graus.append(grau)
+            
+            if vizinhos:
+                pesos = [self.get_peso(v_id, v) for v in vizinhos]
+                pesos_medios.append(np.mean(pesos))
+                riscos = [self.__vertice_data[v]['risco_fogo'] for v in vizinhos if v in self.__vertice_data]
+                riscos_vizinhos.append(np.mean(riscos) if riscos else 0.0)
+            else:
+                pesos_medios.append(0.0)
+                riscos_vizinhos.append(0.0)
+            
+            if grau < 2:
+                coefs_clustering.append(0.0)
+            else:
+                arestas = sum(1 for i, v1 in enumerate(vizinhos) for v2 in vizinhos[i+1:] if self.get_peso(v1, v2) > 0)
+                coefs_clustering.append(arestas / (grau * (grau - 1) / 2) if grau > 1 else 0.0)
+            
+            n = len(vertices)
+            centralidades.append(grau / (n - 1) if n > 1 else 0.0)
+            
+            risco_local = self.__vertice_data[v_id]['risco_fogo']
+            riscos_propagacao.append(risco_local * 0.5 + riscos_vizinhos[-1] * 0.3 + grau * 0.2)
+        
+        df_features = pd.DataFrame({
+            'grafo_grau': graus,
+            'grafo_peso_medio_arestas': pesos_medios,
+            'grafo_risco_medio_vizinhos': riscos_vizinhos,
+            'grafo_coeficiente_clustering': coefs_clustering,
+            'grafo_centralidade_grau': centralidades,
+            'grafo_risco_propagacao': riscos_propagacao
+        })
         
         if len(df_features) < len(df):
             df_features = df_features.reindex(range(len(df)), fill_value=0)
@@ -282,8 +323,9 @@ class ClusterGraph(Graph):
             df_features = df_features.iloc[:len(df)]
         
         for col in df_features.columns:
-            df[f'grafo_{col}'] = df_features[col].values
+            df[col] = df_features[col].values
         
+        print(f'Features extraídas com sucesso!')
         return df
     
     def identificar_regioes_criticas(self, percentil: float = 90) -> List[Tuple[int, float, float]]:

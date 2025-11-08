@@ -15,15 +15,16 @@ if df is None or len(df) == 0:
 print(f'✅ {len(df)} registros carregados\n')
 
 print('='*60)
-print('GERANDO MODELO COM FEATURES DE GRAFO')
+print('GERANDO MODELO COM FEATURES DE GRAFO OTIMIZADO')
 print('='*60)
 
 grafo = construir_grafo_hibrido(
     df, 
-    threshold_km=50.0, 
+    threshold_km=50.0,
     threshold_dias=7,
-    grid_size_km=25.0,
-    janela_temporal_dias=7
+    grid_size_km=50.0,
+    janela_temporal_dias=14,
+    max_conexoes_por_vertice=10
 )
 
 treinar_modelo(
