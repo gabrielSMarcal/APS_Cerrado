@@ -15,7 +15,7 @@ app = Dash(
 # Importar pages depois de criar o app para evitar importação circular
 import pages
 
-# --- Layout da Barra de Navegação ---
+# Layout da Barra de Navegação
 navegacao = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink('Início', href='/')),
@@ -30,14 +30,51 @@ navegacao = dbc.NavbarSimple(
     className='mb-5'
 )
 
-# --- Layout Principal ---
+# Layout Principal
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    navegacao,
+    html.Div(id='navbar-container'),
     html.Div(id='conteudo', className='container-fluid')
 ])
 
-# --- Callback de Roteamento ---
+# Callback para Navbar com Links Condicionais
+@app.callback(
+    Output('navbar-container', 'children'),
+    Input('url', 'pathname')
+)
+
+def toggle_navbar(pathname):
+    '''
+    Mantém a navbar sempre visível, mas remove os links quando estiver na home
+    '''
+    
+    if pathname == '/':
+        # Navbar SEM links na home
+        return dbc.NavbarSimple(
+            children=[],
+            brand='Análise de Risco de Fogo - Cerrado',
+            brand_href='/',
+            color='primary',
+            dark=True,
+            className='mb-5'
+        )
+    else:
+        # Navbar COM links nas outras páginas
+        return dbc.NavbarSimple(
+            children=[
+                dbc.NavItem(dbc.NavLink('Início', href='/')),
+                dbc.NavItem(dbc.NavLink('Gráficos por Ano', href='/graficos')),
+                dbc.NavItem(dbc.NavLink('Modelo de previsão', href='/dados')),
+                dbc.NavItem(dbc.NavLink('Previsão de 2026', href='/mapa')),
+            ],
+            brand='Análise de Risco de Fogo - Cerrado',
+            brand_href='/',
+            color='primary',
+            dark=True,
+            className='mb-5'
+        )
+
+# Callback de Roteamento
 @app.callback(
     Output('conteudo', 'children'),
     Input('url', 'pathname')

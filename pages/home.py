@@ -12,6 +12,27 @@ layout = dbc.Container([
         "Use os botões abaixo para acessar as diferentes seções do sistema.",
         className="text-center mb-5"
     ),
+    
+    html.P(
+        "Os dados analisados incluem informações geográficas, temporais e ambientais relacionadas a incêndios no bioma Cerrado. "
+        "A análise é realizada utilizando um modelo de aprendizado de máquina que incorpora um TAD (Tipo Abstrato de Dados) em forma de grafo "
+        "para capturar relações espaciais e temporais entre os dados.",
+        className="text-center mb-4"
+    ),
+    
+    html.P(
+        "Selecione uma opção para navegar pelo sistema:",
+        className="text-center mb-4"
+    ),
+    
+    html.Ul(
+        [
+            html.Li("📊 Gráficos por Ano: Visualize gráficos interativos que mostram a média de risco de fogo e a contagem de casos por estado no Cerrado para cada ano disponível."),
+            html.Li("🧮 Modelo de Previsão: Acesse informações detalhadas sobre o modelo de aprendizado de máquina utilizado para prever o risco de fogo, incluindo métricas de desempenho e importância das features."),
+            html.Li("📈 Previsão 2026: Veja a previsão do risco de fogo para o ano de 2026, gerada pelo modelo treinado com dados históricos e utilizando o TAD em forma de grafo."),
+        ],
+        className="mb-5"
+    ),
 
     # Seção dos botões principais
     html.Div([
