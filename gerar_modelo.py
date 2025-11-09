@@ -3,7 +3,7 @@ from cluster.cluster_graph import construir_grafo_hibrido
 from prev.cluster_predicao import treinar_modelo
 import os
 
-os.makedirs('./source', exist_ok=True)
+os.makedirs('./source/test', exist_ok=True)
 
 print('🔄 Carregando dados históricos...')
 df = connection()
@@ -33,7 +33,7 @@ treinar_modelo(
     grafo=grafo,
     mostrar_acuracia=True,
     salvar_modelo=True,
-    caminho_modelo='./models/modelo_random_forest.pkl'
+    caminho_modelo='./source/test/modelo_random_forest.pkl'
 )
 
 print('\n✅ Arquivo modelo_random_forest.pkl gerado com sucesso!')

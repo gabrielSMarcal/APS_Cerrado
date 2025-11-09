@@ -5,6 +5,15 @@ from app import app
 import pandas as pd
 import os
 
+from pages.componentes_ml import (
+    secao_pipeline_overview,
+    secao_grafo_espacotemporal,
+    secao_clustering_kmeans,
+    secao_random_forest,
+    cards_metricas_melhorados,
+    alerta_contexto_metricas
+)
+
 # Carregar dados das métricas geradas
 METRICS_PATH = './assets/avaliacao_outputs/metrics_continuas_por_ano.csv'
 MARGIN_PATH = './assets/avaliacao_outputs/metrics_margem_por_ano.csv'
@@ -17,8 +26,26 @@ layout = dbc.Container([
     # Cabeçalho
     dbc.Row([
         dbc.Col([
-            html.H2("Análise de Desempenho do Modelo", className="text-center mb-4 mt-4"),
+            html.H2("🤖 Análise de Desempenho do Modelo de Machine Learning", 
+                   className="text-center mb-3 mt-4"),
+            html.P(
+                "Explore o pipeline completo de ML que combina análise de grafos, "
+                "clustering e Random Forest para prever riscos de incêndio no Cerrado.",
+                className="text-center text-muted mb-4"
+            ),
             html.Hr()
+        ], width=12)
+    ]),
+    
+    secao_pipeline_overview(),
+    secao_grafo_espacotemporal(),
+    secao_clustering_kmeans(),
+    secao_random_forest(),
+    
+    # Título de métricas
+    dbc.Row([
+        dbc.Col([
+            html.H3("📈 Métricas de Desempenho", className="mb-4 mt-5"),
         ], width=12)
     ]),
     
@@ -71,94 +98,8 @@ layout = dbc.Container([
     ]),
     
     # Explicação das métricas
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("ℹ️ Entendendo as Métricas", className="card-title mb-3"),
-                    dbc.Row([
-                        dbc.Col([
-                            html.H6("MAE (Mean Absolute Error)", className="text-primary"),
-                            html.P(
-                                "Média das diferenças absolutas entre valores preditos e reais. "
-                                "Valores menores indicam melhor desempenho.",
-                                className="small"
-                            )
-                        ], width=12, md=6),
-                        dbc.Col([
-                            html.H6("RMSE (Root Mean Square Error)", className="text-warning"),
-                            html.P(
-                                "Raiz quadrada da média dos erros ao quadrado. "
-                                "Penaliza erros maiores mais fortemente que o MAE.",
-                                className="small"
-                            )
-                        ], width=12, md=6)
-                    ]),
-                    dbc.Row([
-                        dbc.Col([
-                            html.H6("R² (Coeficiente de Determinação)", className="text-success mt-2"),
-                            html.P(
-                                "Indica quanto da variação dos dados é explicada pelo modelo. "
-                                "Varia de 0 a 1, onde 1 é perfeito.",
-                                className="small"
-                            )
-                        ], width=12, md=6),
-                        dbc.Col([
-                            html.H6("Acurácia (±10)", className="text-info mt-2"),
-                            html.P(
-                                "Porcentagem de predições que ficaram dentro de uma margem "
-                                "de erro de ±10 unidades do valor real.",
-                                className="small"
-                            )
-                        ], width=12, md=6)
-                    ])
-                ])
-            ], className="shadow-sm")
-        ], width=12)
-    ], className="mb-5"),
-    
-    # Cards com métricas principais
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("MAE", className="card-title text-center"),
-                    html.H3(id="mae-value", className="text-center text-primary"),
-                    html.P("Erro Médio Absoluto", className="text-muted text-center small")
-                ])
-            ], className="shadow-sm")
-        ], width=12, md=3),
-        
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("RMSE", className="card-title text-center"),
-                    html.H3(id="rmse-value", className="text-center text-warning"),
-                    html.P("Raiz do Erro Quadrático Médio", className="text-muted text-center small")
-                ])
-            ], className="shadow-sm")
-        ], width=12, md=3),
-        
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("R²", className="card-title text-center"),
-                    html.H3(id="r2-value", className="text-center text-success"),
-                    html.P("Coeficiente de Determinação", className="text-muted text-center small")
-                ])
-            ], className="shadow-sm")
-        ], width=12, md=3),
-        
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("Acurácia (±10)", className="card-title text-center"),
-                    html.H3(id="acc-value", className="text-center text-info"),
-                    html.P("Predições dentro da margem", className="text-muted text-center small")
-                ])
-            ], className="shadow-sm")
-        ], width=12, md=3)
-    ], className="mb-4"),
+    cards_metricas_melhorados(),
+    alerta_contexto_metricas(),
     
     # Gráficos de métricas
     dbc.Row([
@@ -244,12 +185,16 @@ def populate_anos(dados_carregados):
     [Output('mae-value', 'children'),
      Output('rmse-value', 'children'),
      Output('r2-value', 'children'),
-     Output('acc-value', 'children')],
+     Output('acc-value', 'children'),
+     Output('mae-interpretation', 'children'),
+     Output('rmse-interpretation', 'children'),
+     Output('r2-interpretation', 'children'),
+     Output('acc-interpretation', 'children')],
     Input('ano-dropdown', 'value')
 )
 def update_metrics_cards(ano_selecionado):
     if ano_selecionado is None or not os.path.exists(METRICS_PATH):
-        return "-", "-", "-", "-"
+        return "-", "-", "-", "-", "-", "-", "-", "-"
     
     df_metrics = pd.read_csv(METRICS_PATH)
     df_margin = pd.read_csv(MARGIN_PATH) if os.path.exists(MARGIN_PATH) else pd.DataFrame()
@@ -269,7 +214,20 @@ def update_metrics_cards(ano_selecionado):
     else:
         acc = "-"
     
-    return mae, rmse, r2, acc
+    mae_interp = f"Erro médio de {mae:.2f} unidades de risco"
+    rmse_interp = "Penaliza erros grandes" if rmse > mae * 1.5 else "Erros consistentes"
+    r2_interp = f"Explica {r2*100:.1f}% da variação"
+    
+    try:
+        acc_num = float(acc.strip('%')) if isinstance(acc, str) else acc
+        acc_interp = "Excelente precisão!" if acc_num > 90 else "Boa precisão"
+    except:
+        acc_interp = "Precisão do modelo"
+    
+    return (
+        f"{mae:.2f}", f"{rmse:.2f}", f"{r2:.3f}", acc,
+        mae_interp, rmse_interp, r2_interp, acc_interp
+    )
 
 
 @app.callback(

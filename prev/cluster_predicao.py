@@ -12,6 +12,7 @@ import multiprocessing
 from models.TAD.ClusterGraph import ClusterGraph
 from cluster.preparacao_dados import preparar_para_predicao, validar_features
 from data.connection import connection
+from render.visualizacoes_modelo import gerar_todas_visualizacoes
 
 
 def treinar_modelo(
@@ -80,8 +81,6 @@ def treinar_modelo(
     print(f'  - n_estimators: 70 (equil\u00edbrio tamanho/acur\u00e1cia)')
     print(f'  - max_depth: 12 (12 meses do ano)')
     print(f'  - min_samples_leaf: 5 (robusto)')
-    print(f'  - Tamanho esperado: 40-50 MB')
-    print(f'  - Acur\u00e1cia esperada: 95-97%')
     
     modelo = RandomForestRegressor(
         n_estimators=70,
@@ -133,6 +132,35 @@ def treinar_modelo(
         print(f'Top 10 Features mais importantes:')
         for i, idx in enumerate(indices_ordenados, 1):
             print(f'  {i}. {X.columns[idx]}: {importancias[idx]:.4f}')
+        
+        # Gerar visualizações
+        print('\n' + '='*60)
+        print('GERANDO VISUALIZAÇÕES')
+        print('='*60)
+
+        try:
+            df_test_viz = None
+            if hasattr(X_test, 'index'):
+                indices_test = X_test.index
+                if 'df' in locals() or 'df' in globals():
+                    df_test_viz = df.loc[indices_test].copy()
+            
+            gerar_todas_visualizacoes(
+                modelo=modelo,
+                X=X_train,
+                y_test=y_test,
+                y_pred=y_pred,
+                df_test=df_test_viz
+            )
+            
+            print('✅ Visualizações geradas com sucesso!')
+            
+        except Exception as e:
+            print(f'⚠️ Erro ao gerar visualizações: {e}')
+            import traceback
+            traceback.print_exc()
+
+        print('='*60 + '\n')
         
         # Mostrar importância das features de grafo
         if usar_grafo:
@@ -215,88 +243,3 @@ def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.nda
     print(f'Total de predicoes: {len(predicoes)}')
     
     return predicoes
-
-
-if __name__ == "__main__":
-    inicio_programa = time.time()
-    
-    print("="*60)
-    print("SISTEMA DE PREDICAO DE RISCO DE FOGO")
-    print("="*60)
-    
-    print("\nCarregando dados...")
-    try:
-        df = connection()
-        
-        if df is None or df.empty:
-            print("Erro: Nenhum dado foi carregado")
-            exit(1)
-            
-        print(f"Dados carregados: {len(df)} registros")
-        print(f"Colunas: {list(df.columns)}")
-        
-        # ============================================
-        # OPÇÃO 1: Modelo SEM grafo (rápido, ~30s)
-        # ============================================
-        print("\n[OPÇÃO 1] Treinando modelo SEM grafo (básico)...")
-        modelo_basico = treinar_modelo(
-            df,
-            usar_grafo=False,
-            grafo=None,
-            mostrar_acuracia=True,
-            salvar_modelo=True,
-            caminho_modelo='./models/modelo_basico.pkl'
-        )
-        
-        # ============================================
-        # OPÇÃO 2: Modelo COM grafo (lento, ~2h)
-        # ============================================
-        resposta = input("\nDeseja treinar modelo COM grafo? (s/n): ")
-        
-        if resposta.lower() == 's':
-            print("\n[OPÇÃO 2] Construindo grafo...")
-            grafo = ClusterGraph()
-            
-            tempo_grafo = time.time()
-            grafo.construir_grafo_dataframe(
-                df,
-                threshold_km=50.0,
-                threshold_dias=7,
-                usar_temporal=True,
-                usar_espacial=True,
-                max_conexoes_por_vertice=50,
-                mostrar_progresso=True
-            )
-            print(f"Grafo construído em {time.time() - tempo_grafo:.2f}s")
-            print(f"Grafo: {len(grafo.get_pontos())} vértices")
-            
-            print("\nTreinando modelo COM grafo...")
-            modelo_grafo = treinar_modelo(
-                df,
-                usar_grafo=True,
-                grafo=grafo,
-                mostrar_acuracia=True,
-                salvar_modelo=True,
-                caminho_modelo='./models/modelo_com_grafo.pkl'
-            )
-            
-            print("\n✅ Modelos treinados com sucesso!")
-            print(f"- Modelo básico: ./models/modelo_basico.pkl")
-            print(f"- Modelo com grafo: ./models/modelo_com_grafo.pkl")
-        else:
-            print("\n✅ Modelo básico treinado com sucesso!")
-            print(f"- Modelo salvo: ./models/modelo_basico.pkl")
-        
-    except ImportError as e:
-        print(f"Erro ao importar módulo: {e}")
-        print("Certifique-se de que o módulo data.connection está disponível")
-    except Exception as e:
-        print(f"Erro ao executar: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    tempo_total_programa = time.time() - inicio_programa
-    print(f"\n{'='*60}")
-    print(f"TEMPO TOTAL DE EXECUÇÃO: {tempo_total_programa:.2f} segundos")
-    print(f"TEMPO EM MINUTOS: {tempo_total_programa/60:.2f} minutos")
-    print(f"{'='*60}")
