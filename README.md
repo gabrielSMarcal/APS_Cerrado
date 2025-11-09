@@ -132,7 +132,7 @@ Acesse no navegador: **http://127.0.0.1:8050**
 -   **Climáticas**: `DiaSemChuva`, `Precipitacao`, `FRP` (Fire Radiative Power).
 -   **Espaciais**: `Latitude`, `Longitude`, `Estado`, `Municipio`.
 -   **Temporais**: `Ano`, `DiaAno`, e dummies para os meses.
--   **Grafo** (opcional): `grau`, `centralidade`, `clustering_coef`.
+-   **Grafo**: `grau`, `centralidade`, `clustering_coef`.
 
 ---
 
