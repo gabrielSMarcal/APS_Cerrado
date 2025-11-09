@@ -11,7 +11,6 @@ Dashboard interativo desenvolvido em **Dash** para análise preditiva de risco d
 ### ✨ Funcionalidades Principais
 
 - 📊 **Visualização Histórica**: Gráficos interativos de focos de incêndio por ano (2014-2025).
-- 🗺️ **Mapas de Calor**: Heatmaps geográficos com intensidade de risco por região.
 - 🤖 **Modelo Preditivo**: Random Forest treinado com clustering e features de grafo para previsão de risco.
 - 📈 **Métricas de Desempenho**: Avaliação completa do modelo (MAE, RMSE, R², Acurácia).
 - 🔮 **Previsão 2026**: Projeção de risco para o ano seguinte com filtros por estado.
