@@ -23,7 +23,19 @@ p.text-center {
   max-width: 720px;
   margin: 0 auto;
   color: #373737;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+}
+
+ul {
+  max-width: 1080px;
+  margin: 0 auto;
+  color: #373737;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+ul li {
+  margin-bottom: 0.8rem;
 }
 
 h3.text-center.my-4 {
