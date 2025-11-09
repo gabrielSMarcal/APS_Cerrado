@@ -33,7 +33,7 @@ treinar_modelo(
     grafo=grafo,
     mostrar_acuracia=True,
     salvar_modelo=True,
-    caminho_modelo='./models/modelo_completo_grafo.pkl'
+    caminho_modelo='./models/modelo_random_forest.pkl'
 )
 
-print('\n✅ Arquivo modelo_completo_grafo.pkl gerado com sucesso!')
+print('\n✅ Arquivo modelo_random_forest.pkl gerado com sucesso!')
