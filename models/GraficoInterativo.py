@@ -14,14 +14,14 @@ class GraficoInterativo:
         Inicializa a classe carregando os dados e gerando os gráficos.
         '''
         
-        self.__grafos = []
+        self.__graficos = []
         self.__ano_selecionado = None
         self.__figura_cache = {}
         
         # Carregar dados e gerar gráficos ao inicializar
-        self.__carregar_e_gerar_grafos()
+        self.__carregar_e_gerar_graficos()
         
-    def __carregar_e_gerar_grafos(self) -> None:
+    def __carregar_e_gerar_graficos(self) -> None:
         '''
         Carrega os CSVs de cada ano e gera os gráficos correspondentes.
         Armazena as figuras em cache para acesso rápido.
@@ -56,24 +56,24 @@ class GraficoInterativo:
                 fig = self.__gerar_figura(df, ano)
                 
                 # Armazenar no cache
-                grafo_info = {
+                grafico_info = {
                     'ano': ano,
                     'df': df,
                     'figura': fig
                 }
                 
-                self.__grafos.append(grafo_info)
+                self.__graficos.append(grafico_info)
                 
                 # Adicionar ao cache de figuras (apenas se ano for int)
                 if isinstance(ano, int):
                     self.__figura_cache[ano] = fig
             
-            # Ordenar grafos por ano
-            self.__grafos.sort(key=lambda x: x['ano'] if isinstance(x['ano'], int) else 0)
+            # Ordenar graficos por ano
+            self.__graficos.sort(key=lambda x: x['ano'] if isinstance(x['ano'], int) else 0)
             
             # Definir ano padrão (mais recente)
-            if self.__grafos:
-                self.__ano_selecionado = self.__grafos[-1]['ano']
+            if self.__graficos:
+                self.__ano_selecionado = self.__graficos[-1]['ano']
                 
         except Exception as e:
             raise RuntimeError(f"Erro ao carregar e gerar gráficos: {e}")
@@ -148,8 +148,8 @@ class GraficoInterativo:
             return self.__figura_cache[ano]
         
         # Se não encontrar, retornar a última figura disponível
-        if self.__grafos:
-            return self.__grafos[-1]['figura']
+        if self.__graficos:
+            return self.__graficos[-1]['figura']
         
         return None
     
@@ -173,18 +173,18 @@ class GraficoInterativo:
             Lista de anos (int) ordenados
         '''
         
-        return [g['ano'] for g in self.__grafos if isinstance(g['ano'], int)]
+        return [g['ano'] for g in self.__graficos if isinstance(g['ano'], int)]
     
-    def obter_lista_grafos(self) -> List[Dict]:
+    def obter_lista_graficos(self) -> List[Dict]:
         '''
-        Retorna a lista completa de grafos com suas informações.
-        Compatível com a estrutura original de lista_grafos.py.
+        Retorna a lista completa de graficos com suas informações.
+        Compatível com a estrutura original de lista_graficos.py.
         
         Retorno:
             Lista de dicionários contendo 'ano', 'figura' e 'df'
         '''
         
-        return self.__grafos
+        return self.__graficos
     
     def obter_estatisticas(self, ano: Optional[int] = None) -> Dict:
         '''
@@ -203,9 +203,9 @@ class GraficoInterativo:
         
         # Buscar DataFrame correspondente
         df = None
-        for grafo in self.__grafos:
-            if grafo['ano'] == ano:
-                df = grafo['df']
+        for grafico in self.__graficos:
+            if grafico['ano'] == ano:
+                df = grafico['df']
                 break
         
         if df is None:
@@ -259,7 +259,7 @@ class GraficoInterativo:
         '''
         Retorna o total de anos disponíveis.
         '''
-        return len(self.__grafos)
+        return len(self.__graficos)
     
     @property
     def ano_mais_recente(self) -> Optional[int]:

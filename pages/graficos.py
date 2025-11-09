@@ -9,15 +9,15 @@ import plotly.graph_objects as go
 # Inicializar a classe de gráficos interativos
 graficos = GraficoInterativo()
 
-# Obter lista de grafos (compatível com estrutura anterior)
-lista_grafos = graficos.obter_lista_grafos()
+# Obter lista de graficos (compatível com estrutura anterior)
+lista_graficos = graficos.obter_lista_graficos()
 
 # Definir valor padrão (ano mais recente)
 valor_padrao = graficos.ano_mais_recente
 
 layout = dbc.Container([
     dcc.Store(id='ano-selecionado-store', data=valor_padrao),
-    html.H3("Grafos por Ano", className="text-center my-4"),
+    html.H3("graficos por Ano", className="text-center my-4"),
     dbc.Row([
         # Coluna lateral com lista de anos
         dbc.Col([
@@ -25,14 +25,14 @@ layout = dbc.Container([
                 html.H5("Selecione o Ano", className="text-center mb-3"),
                 html.Div([
                     dbc.Button(
-                        f"Ano {grafo['ano']}",
-                        id={'type': 'btn-ano', 'index': grafo['ano']},
-                        color="primary" if grafo['ano'] == valor_padrao else "secondary",
-                        outline=grafo['ano'] != valor_padrao,
+                        f"Ano {grafico['ano']}",
+                        id={'type': 'btn-ano', 'index': grafico['ano']},
+                        color="primary" if grafico['ano'] == valor_padrao else "secondary",
+                        outline=grafico['ano'] != valor_padrao,
                         className="w-100 mb-2",
                         size="lg",
                         n_clicks=0
-                    ) for grafo in lista_grafos
+                    ) for grafico in lista_graficos
                 ]),
             ], className="sticky-top", style={'top': '20px'})
         ], width=2, className="pe-3"),
@@ -42,13 +42,13 @@ layout = dbc.Container([
             # Gráfico de pontos por município
             html.Div([
                 html.H5("Risco de Fogo Anual", className="text-center mb-3"),
-                dcc.Graph(id='grafo-ano', style={'height': '70vh'})
+                dcc.Graph(id='grafico-ano', style={'height': '70vh'})
             ], className="mb-4"),
             
             # Gráfico de média de risco por estado
             html.Div([
                 html.H5("Média de Risco por Estado", className="text-center mb-3"),
-                dcc.Graph(id='grafo-media-risco', style={'height': '70vh'})
+                dcc.Graph(id='grafico-media-risco', style={'height': '70vh'})
             ])
         ], width=10)
     ])
@@ -77,14 +77,14 @@ def update_ano_selecionado(n_clicks, ano_atual):
     return ano_atual
 
 @app.callback(
-    [Output('grafo-ano', 'figure'),
-     Output('grafo-media-risco', 'figure'),
+    [Output('grafico-ano', 'figure'),
+     Output('grafico-media-risco', 'figure'),
      Output({'type': 'btn-ano', 'index': ALL}, 'color'),
      Output({'type': 'btn-ano', 'index': ALL}, 'outline')],
     Input('ano-selecionado-store', 'data'),
     prevent_initial_call=False
 )
-def update_grafo_display(ano_selecionado):
+def update_grafico_display(ano_selecionado):
     '''
     Atualiza a exibição dos gráficos e estilos dos botões.
     '''
@@ -114,7 +114,7 @@ def update_grafo_display(ano_selecionado):
         )
     
     # Atualizar cores e outlines dos botões
-    colors = ['primary' if grafo['ano'] == ano_selecionado else 'secondary' for grafo in lista_grafos]
-    outlines = [False if grafo['ano'] == ano_selecionado else True for grafo in lista_grafos]
+    colors = ['primary' if grafico['ano'] == ano_selecionado else 'secondary' for grafico in lista_graficos]
+    outlines = [False if grafico['ano'] == ano_selecionado else True for grafico in lista_graficos]
     
     return figura_pontos, figura_media, colors, outlines

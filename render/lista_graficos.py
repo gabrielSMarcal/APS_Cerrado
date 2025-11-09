@@ -2,7 +2,7 @@ import plotly.express as px
 import pandas as pd
 from data.connection import connection_list
 
-def gerar_lista_grafos():
+def gerar_lista_graficos():
     
     '''
     Gerar uma lista de gráficos de dispersão em mapa para cada DataFrame na lista, 
@@ -10,7 +10,7 @@ def gerar_lista_grafos():
     '''
     
     df_list = connection_list()
-    grafos = []
+    graficos = []
     
     for df in df_list:
         
@@ -47,12 +47,12 @@ def gerar_lista_grafos():
             title_xanchor='center'
         )
         
-        grafos.append({
+        graficos.append({
             'ano': int(ano) if ano != 'Desconhecido' else ano,
             'figura': fig,
             'df': df
         })
 
-    grafos.sort(key=lambda x: x['ano'] if isinstance(x['ano'], int) else 0)
-    
-    return grafos
+    graficos.sort(key=lambda x: x['ano'] if isinstance(x['ano'], int) else 0)
+
+    return graficos
