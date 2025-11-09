@@ -11,7 +11,6 @@ from prev.cluster_predicao import treinar_modelo
 from data.connection import connection 
 
 import folium
-from folium.plugins import MarkerCluster, HeatMap
 
 # Configurações
 OUT_DIR = './assets/avaliacao_outputs'
@@ -179,60 +178,6 @@ def plot_e_salvar_metricas(metrics_df, margin_df, out_dir=OUT_DIR):
     metrics_df.to_csv(os.path.join(out_dir, 'metrics_continuas_por_ano.csv'), index=False)
     margin_df.to_csv(os.path.join(out_dir, 'metrics_margem_por_ano.csv'), index=False)
 
-
-def gerar_mapas_2025(df_eval, out_dir=OUT_DIR, sample=None):
-    '''
-    Gera mapa Folium apenas para o ano de 2025 mostrando:
-      - ACERTO (verde)
-      - SOBRE-estimativa ACIMA (laranja)
-      - SUB-estimativa BAIXO (vermelho)
-    Salva mapa_2025_acertos_erros.html
-    '''
-    
-    df_2025 = df_eval[df_eval['Ano'] == 2025].copy()
-    if df_2025.empty:
-        print('Não há dados para o ano de 2025.')
-        return None
-
-    if sample is not None and len(df_2025) > sample:
-        df_2025 = df_2025.sample(sample, random_state=42)
-
-    # Classificação acerto/sobre/sub
-    def resultado_margem(row):
-        true = float(row['RiscoFogo'])
-        pred = float(row['Risco_pred'])
-        if abs(true - pred) <= MARGEM:
-            return 'ACERTO'
-        return 'SOBRE' if pred > true else 'SUB'
-
-    df_2025['result_margem'] = df_2025.apply(resultado_margem, axis=1)
-
-    # Criar mapa
-    start_coords = [df_2025['Latitude'].median(), df_2025['Longitude'].median()]
-    m = folium.Map(location=start_coords, zoom_start=5, tiles='CartoDB Positron')
-    mc = MarkerCluster().add_to(m)
-    colors = {'ACERTO':'green', 'SOBRE':'orange', 'SUB':'red'}
-
-    for _, r in df_2025.iterrows():
-        popup = (f'Ano:{int(r["Ano"])}<br>'
-                 f'Data:{pd.to_datetime(r["Data"]).date()}<br>'
-                 f'Risco_true:{int(r["RiscoFogo"])} - Risco_pred:{int(r["Risco_pred"])}<br>'
-                 f'Resultado:{r["result_margem"]}')
-        folium.CircleMarker(
-            location=(r['Latitude'], r['Longitude']),
-            radius=4,
-            color=colors.get(r['result_margem'], 'gray'),
-            fill=True,
-            fill_opacity=0.7,
-            popup=popup
-        ).add_to(mc)
-
-    map_path = os.path.join(out_dir, 'map_2025_acertos_erros.html')
-    m.save(map_path)
-    print(f'Mapa 2025 salvo: {map_path}')
-    return map_path
-
-
 def carregar_dados_csvs(pasta_csvs):
     import re
     arquivos = [os.path.join(pasta_csvs, f) for f in os.listdir(pasta_csvs) if f.endswith('.csv')]
@@ -248,32 +193,3 @@ def carregar_dados_csvs(pasta_csvs):
         df['Ano'] = df['Data'].dt.year
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
-
-
-def gerar_heatmap(df, ano=None, saida=None):
-    df_map = df.copy()
-    if ano:
-        df_map = df_map[df_map['Ano'] == ano]
-        if df_map.empty:
-            print(f"Nenhum dado para o ano {ano}")
-            return None
-
-    df_map = df_map.dropna(subset=['Latitude', 'Longitude', 'RiscoFogo'])
-    if df_map.empty:
-        print('Nenhum dado válido com Latitude, Longitude e RiscoFogo')
-        return None
-
-    df_map['peso'] = df_map['RiscoFogo'] / df_map['RiscoFogo'].max()
-
-    center = [df_map['Latitude'].median(), df_map['Longitude'].median()]
-    mapa = folium.Map(location=center, zoom_start=5, tiles='CartoDB Positron')
-
-    heat_data = df_map[['Latitude', 'Longitude', 'peso']].values.tolist()
-    HeatMap(heat_data, radius=10, blur=12, max_zoom=6).add_to(mapa)
-
-    if saida is None:
-        saida = os.path.join(OUT_DIR, f'heatmap_{ano if ano else "todos_anos"}.html')
-
-    mapa.save(saida)
-    print(f'Heatmap salvo em: {saida}')
-    return saida

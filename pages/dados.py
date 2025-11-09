@@ -8,7 +8,6 @@ import os
 # Carregar dados das métricas geradas
 METRICS_PATH = './assets/avaliacao_outputs/metrics_continuas_por_ano.csv'
 MARGIN_PATH = './assets/avaliacao_outputs/metrics_margem_por_ano.csv'
-HEATMAP_DIR = './assets/avaliacao_outputs'
 
 # Layout da página
 layout = dbc.Container([
@@ -445,40 +444,6 @@ def update_graph_acuracia(dados_carregados):
             height=400
         )
         return fig
-
-
-# Callback atualizado para mostrar heatmap baseado no ano selecionado
-@app.callback(
-    Output('heatmap-container', 'children'),
-    Input('ano-dropdown', 'value')
-)
-def update_heatmap(ano_selecionado):
-    if ano_selecionado is None:
-        return html.Div([
-            html.I(className="bi bi-map", style={'fontSize': '64px', 'color': '#ccc'}),
-            html.P(
-                "Selecione um ano acima para visualizar o mapa de calor", 
-                className="text-muted text-center mt-3"
-            )
-        ], className="text-center p-5")
-    
-    heat_path = f'assets/avaliacao_outputs/heatmap_{ano_selecionado}.html'
-    
-    if os.path.exists(heat_path):
-        with open(heat_path, 'r', encoding='utf-8') as f:
-            heat_html = f.read()
-        return html.Iframe(
-            srcDoc=heat_html, 
-            style={'width': '100%', 'height': '600px', 'border': 'none', 'borderRadius': '8px'}
-        )
-    
-    return html.Div([
-        html.I(className="bi bi-exclamation-triangle-fill text-warning", style={'fontSize': '48px'}),
-        html.P(
-            f"Mapa de calor não disponível para o ano {ano_selecionado}", 
-            className="text-muted mt-3"
-        )
-    ], className="text-center p-5")
 
 
 @app.callback(
