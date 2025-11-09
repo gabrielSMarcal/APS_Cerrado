@@ -23,14 +23,10 @@ def treinar_modelo(
     salvar_modelo: bool = False,
     caminho_modelo: str = 'modelo_random_forest.pkl'
 ) -> Dict:
-    """
+    '''
     Treina modelo Random Forest para predição de risco de fogo.
+    '''
     
-    OTIMIZAÇÕES:
-    - NÃO salva o grafo completo (apenas features extraídas)
-    - Usa preparação centralizada
-    - Modelo leve (~5MB ao invés de 1.4GB)
-    """
     inicio = time.time()
     
     print(f'\n{"="*60}')
@@ -170,8 +166,7 @@ def treinar_modelo(
                 for feature in features_grafo:
                     idx = list(X.columns).index(feature)
                     print(f'  - {feature}: {importancias[idx]:.4f}')
-    
-    # ✅ MODELO LEVE: NÃO SALVAR O GRAFO!
+
     modelo_cluster = {
         'modelo': modelo,
         'scaler': scaler,
@@ -190,9 +185,6 @@ def treinar_modelo(
         tamanho_mb = os.path.getsize(caminho_modelo) / (1024 * 1024)
         print(f'\nModelo salvo em "{caminho_modelo}"')
         print(f'Tamanho do arquivo: {tamanho_mb:.2f} MB')
-        
-        if tamanho_mb > 100:
-            print(f'⚠️ AVISO: Modelo muito grande! Deveria ter ~5-10MB')
     
     tempo_total = time.time() - inicio
     print(f'\nTempo de execucao: {tempo_total:.2f} segundos')
@@ -201,12 +193,10 @@ def treinar_modelo(
 
 
 def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.ndarray:
-    """
+    '''
     Faz predições usando modelo treinado.
+    '''
     
-    IMPORTANTE: Se o modelo foi treinado COM grafo, você precisa 
-    passar um grafo construído externamente.
-    """
     inicio = time.time()
     
     usar_grafo = modelo_cluster.get('usar_grafo', False)
@@ -214,7 +204,6 @@ def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.nda
     
     print('\nFazendo predicoes...')
     
-    # ✅ PREPARAR DADOS (sem grafo, pois não foi salvo)
     df_preparado, _ = preparar_para_predicao(
         df_novos_dados, 
         usar_grafo=False,  # Grafo não está disponível
@@ -243,3 +232,46 @@ def fazer_predicao(modelo_cluster: Dict, df_novos_dados: pd.DataFrame) -> np.nda
     print(f'Total de predicoes: {len(predicoes)}')
     
     return predicoes
+
+
+if __name__ == "__main__":
+    inicio_programa = time.time()
+    
+    print("="*60)
+    print("SISTEMA DE PREDICAO DE RISCO DE FOGO")
+    print("="*60)
+    
+    print("\nCarregando dados...")
+    df = connection()
+        
+    if df is None or df.empty:
+        print("Erro: Nenhum dado foi carregado")
+        exit(1)
+        
+    print(f"Dados carregados: {len(df)} registros")
+    print(f"Colunas: {list(df.columns)}")
+        
+    grafo = ClusterGraph()
+    
+    tempo_grafo = time.time()
+    grafo.construir_grafo_dataframe(
+        df,
+        threshold_km=50.0,
+        threshold_dias=7,
+        usar_temporal=True,
+        usar_espacial=True,
+        max_conexoes_por_vertice=50,
+        mostrar_progresso=True
+    )
+    print(f"Grafo construído em {time.time() - tempo_grafo:.2f}s")
+    print(f"Grafo: {len(grafo.get_pontos())} vértices")
+    
+    print("\nTreinando modelo COM grafo...")
+    modelo_grafo = treinar_modelo(
+        df,
+        usar_grafo=True,
+        grafo=grafo,
+        mostrar_acuracia=True,
+        salvar_modelo=True,
+        caminho_modelo='./source/test/modelo_com_grafo.pkl'
+    )

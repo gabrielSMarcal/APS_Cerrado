@@ -3,7 +3,6 @@ import pandas as pd
 from data.connection import connection_list
 
 def gerar_lista_graficos():
-    
     '''
     Gerar uma lista de gráficos de dispersão em mapa para cada DataFrame na lista, 
     guardando em variáveis para serem resgatadas no Dash.

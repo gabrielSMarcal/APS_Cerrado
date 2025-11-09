@@ -1,18 +1,12 @@
+from app import app
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
-from app import app
 import pandas as pd
+import plotly.graph_objs as go
 import os
 
-from pages.componentes_ml import (
-    secao_pipeline_overview,
-    secao_grafo_espacotemporal,
-    secao_clustering_kmeans,
-    secao_random_forest,
-    cards_metricas_melhorados,
-    alerta_contexto_metricas
-)
+import render.componentes_ml as componentes
 
 # Carregar dados das métricas geradas
 METRICS_PATH = './assets/avaliacao_outputs/metrics_continuas_por_ano.csv'
@@ -36,12 +30,12 @@ layout = dbc.Container([
             html.Hr()
         ], width=12)
     ]),
-    
-    secao_pipeline_overview(),
-    secao_grafo_espacotemporal(),
-    secao_clustering_kmeans(),
-    secao_random_forest(),
-    
+
+    componentes.secao_pipeline_overview(),
+    componentes.secao_grafo_espacotemporal(),
+    componentes.secao_clustering_kmeans(),
+    componentes.secao_random_forest(),
+
     # Título de métricas
     dbc.Row([
         dbc.Col([
@@ -98,9 +92,9 @@ layout = dbc.Container([
     ]),
     
     # Explicação das métricas
-    cards_metricas_melhorados(),
-    alerta_contexto_metricas(),
-    
+    componentes.cards_metricas_melhorados(),
+    componentes.alerta_contexto_metricas(),
+
     # Gráficos de métricas
     dbc.Row([
         dbc.Col([
@@ -162,6 +156,7 @@ layout = dbc.Container([
     Output('dados-carregados', 'data'),
     Input('dados-carregados', 'id')
 )
+
 def carregar_dados_iniciais(_):
     return True
 
@@ -193,9 +188,10 @@ def populate_anos(dados_carregados):
     Input('ano-dropdown', 'value')
 )
 def update_metrics_cards(ano_selecionado):
-    """
+    '''
     Atualiza os cards de métricas e suas interpretações
-    """
+    '''
+    
     if ano_selecionado is None or not os.path.exists(METRICS_PATH):
         return "-", "-", "-", "-", "-", "-", "-", "-"
     
@@ -268,8 +264,11 @@ def update_metrics_cards(ano_selecionado):
     Output('graph-metricas-ano', 'figure'),
     Input('dados-carregados', 'data')
 )
+
 def update_graph_metricas(dados_carregados):
-    import plotly.graph_objs as go
+    '''
+    Gerar gráfico de métricas ao longo dos anos
+    '''
     
     if not dados_carregados or not os.path.exists(METRICS_PATH):
         fig = go.Figure()
@@ -361,8 +360,11 @@ def update_graph_metricas(dados_carregados):
     Output('graph-acuracia-margem', 'figure'),
     Input('dados-carregados', 'data')
 )
+
 def update_graph_acuracia(dados_carregados):
-    import plotly.graph_objs as go
+    '''
+    Gerar gráfico de acurácia por margem ao longo dos anos
+    '''
     
     if not dados_carregados or not os.path.exists(MARGIN_PATH):
         fig = go.Figure()
@@ -442,7 +444,12 @@ def update_graph_acuracia(dados_carregados):
     Output('tabela-metricas', 'children'),
     Input('dados-carregados', 'data')
 )
+
 def update_table(dados_carregados):
+    '''
+    Gerar tabela de métricas detalhadas por ano
+    '''
+    
     if not dados_carregados or not os.path.exists(METRICS_PATH):
         return html.P("Dados não disponíveis", className="text-muted")
     

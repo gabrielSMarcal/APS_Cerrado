@@ -1,20 +1,12 @@
-"""
-Componentes modulares para enriquecer a página dados.py
-Adicione estes componentes à sua página existente
-
-Autor: APS_Cerrado Team
-"""
-
 from dash import html
 import dash_bootstrap_components as dbc
 
 
 def secao_pipeline_overview():
-    """
-    Componente: Visão geral do pipeline de ML
+    '''
+    Visão geral do pipeline de ML
+    '''
     
-    Uso: Adicione no início da página dados.py, após o cabeçalho
-    """
     return dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -87,11 +79,10 @@ def secao_pipeline_overview():
 
 
 def secao_grafo_espacotemporal():
-    """
-    Componente: Explicação detalhada do grafo espaço-temporal
+    '''
+    Explicação detalhada do grafo espaço-temporal
+    '''
     
-    Uso: Adicione após a seção de pipeline
-    """
     return dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -182,11 +173,10 @@ def secao_grafo_espacotemporal():
 
 
 def secao_clustering_kmeans():
-    """
-    Componente: Explicação e visualização do clustering
+    '''
+    Explicação e visualização do clustering
+    '''
     
-    Uso: Adicione após a seção de grafo
-    """
     return dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -253,11 +243,10 @@ def secao_clustering_kmeans():
 
 
 def secao_random_forest():
-    """
-    Componente: Explicação e visualização do Random Forest
+    '''
+    Explicação e visualização do Random Forest
+    '''
     
-    Uso: Adicione após a seção de clustering
-    """
     return dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -336,11 +325,10 @@ def secao_random_forest():
 
 
 def cards_metricas_melhorados():
-    """
-    Componente: Cards de métricas com interpretações
+    '''
+    Cards de métricas com interpretações
+    '''
     
-    Uso: Substitua os cards de métricas existentes
-    """
     return dbc.Row([
         dbc.Col([
             dbc.Card([
@@ -417,11 +405,10 @@ def cards_metricas_melhorados():
 
 
 def alerta_contexto_metricas():
-    """
-    Componente: Alerta com contexto interpretativo das métricas
+    '''
+    Alerta com contexto interpretativo das métricas
+    '''
     
-    Uso: Adicione após os cards de métricas
-    """
     return dbc.Row([
         dbc.Col([
             dbc.Alert([

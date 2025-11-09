@@ -12,4 +12,4 @@ print('='*80)
 main(usar_grafo=True)
 
 print('\n✅ Processo concluído com sucesso!')
-print('📁 Arquivo gerado: ./source/test/previsao_2026.csv')
+print('📁 Arquivo gerado: previsao_2026.csv')

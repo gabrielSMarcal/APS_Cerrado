@@ -9,10 +9,10 @@ _cache_figuras = {}
 _cache_inicializado = False
 
 def _inicializar_cache():
-    """
+    '''
     Inicializa o cache de figuras para todos os anos disponíveis.
-    """
-    
+    '''
+
     global _cache_figuras, _cache_inicializado
     
     if _cache_inicializado:
@@ -127,11 +127,11 @@ def _inicializar_cache():
     _cache_inicializado = True
 
 def gerar_grafico_media_risco_por_ano(ano: int):
-    """
+    '''
     Gera um gráfico de média de risco para um ano específico.
     Usa cache para melhorar performance.
-    """
-    
+    '''
+
     # Inicializar cache se necessário
     _inicializar_cache()
     
@@ -139,11 +139,11 @@ def gerar_grafico_media_risco_por_ano(ano: int):
     return _cache_figuras.get(ano)
 
 def grafo_media_risco():
-    """
+    '''
     Função original mantida para retrocompatibilidade.
     Gera e exibe gráficos para todos os anos.
-    """
-    
+    '''
+
     _inicializar_cache()
     
     for ano in sorted(_cache_figuras.keys()):

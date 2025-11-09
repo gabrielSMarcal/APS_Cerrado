@@ -15,23 +15,18 @@ OUTPUT_DIR = Path('./assets/avaliacao_outputs')
 
 
 def garantir_diretorio():
-    """Cria o diretório de saída se não existir"""
+    '''
+    Cria o diretório de saída se não existir
+    '''
+    
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def gerar_feature_importance(modelo, feature_names, top_n=15, salvar=True):
-    """
+    '''
     Gera gráfico de importância das features do Random Forest
+    '''
     
-    Args:
-        modelo: Modelo Random Forest treinado
-        feature_names: Lista com nomes das features
-        top_n: Número de features mais importantes a mostrar
-        salvar: Se True, salva o gráfico
-    
-    Returns:
-        Path do arquivo salvo ou None
-    """
     garantir_diretorio()
     
     importancias = modelo.feature_importances_
@@ -74,7 +69,7 @@ def gerar_feature_importance(modelo, feature_names, top_n=15, salvar=True):
 
 
 def gerar_predito_vs_real(y_test, y_pred, ano=None, salvar=True):
-    """
+    '''
     Gera gráfico de dispersão comparando valores preditos vs reais
     
     Args:
@@ -85,7 +80,8 @@ def gerar_predito_vs_real(y_test, y_pred, ano=None, salvar=True):
     
     Returns:
         Path do arquivo salvo ou None
-    """
+    '''
+    
     garantir_diretorio()
     
     fig, ax = plt.subplots(figsize=(9, 9))
@@ -135,17 +131,10 @@ def gerar_predito_vs_real(y_test, y_pred, ano=None, salvar=True):
 
 
 def gerar_analise_residuos(y_test, y_pred, salvar=True):
-    """
+    '''
     Gera gráfico de análise de resíduos
+    '''
     
-    Args:
-        y_test: Valores reais
-        y_pred: Valores preditos
-        salvar: Se True, salva o gráfico
-    
-    Returns:
-        Path do arquivo salvo ou None
-    """
     garantir_diretorio()
     
     y_test = np.array(y_test)
@@ -189,17 +178,10 @@ def gerar_analise_residuos(y_test, y_pred, salvar=True):
 
 
 def gerar_comparacao_com_sem_grafo(metricas_sem, metricas_com, salvar=True):
-    """
+    '''
     Gera gráfico comparando desempenho COM e SEM features de grafo
+    '''
     
-    Args:
-        metricas_sem: Dict com métricas do modelo sem grafo
-        metricas_com: Dict com métricas do modelo com grafo
-        salvar: Se True, salva o gráfico
-    
-    Returns:
-        Path do arquivo salvo ou None
-    """
     garantir_diretorio()
     
     metricas_nomes = ['R²', 'MAE', 'RMSE', 'Acurácia (±10)']
@@ -260,16 +242,10 @@ def gerar_comparacao_com_sem_grafo(metricas_sem, metricas_com, salvar=True):
 
 
 def gerar_erro_por_estado(df_com_erro, salvar=True):
-    """
+    '''
     Gera gráfico de erro médio por estado
+    '''
     
-    Args:
-        df_com_erro: DataFrame com colunas ['Estado', 'Erro']
-        salvar: Se True, salva o gráfico
-    
-    Returns:
-        Path do arquivo salvo ou None
-    """
     garantir_diretorio()
     
     # Calcular erro médio e desvio padrão por estado
@@ -322,19 +298,10 @@ def gerar_erro_por_estado(df_com_erro, salvar=True):
 
 
 def gerar_todas_visualizacoes(modelo, X, y_test, y_pred, df_test=None):
-    """
+    '''
     Função principal que gera todas as visualizações de uma vez
+    '''
     
-    Args:
-        modelo: Modelo Random Forest treinado
-        X: DataFrame com features (para nomes)
-        y_test: Valores reais
-        y_pred: Valores preditos
-        df_test: DataFrame de teste com coluna 'Estado' (opcional)
-    
-    Returns:
-        Dict com caminhos de todos os arquivos gerados
-    """
     print("\n" + "="*60)
     print("GERANDO VISUALIZAÇÕES DO MODELO")
     print("="*60 + "\n")
@@ -366,34 +333,3 @@ def gerar_todas_visualizacoes(modelo, X, y_test, y_pred, df_test=None):
     print("="*60 + "\n")
     
     return caminhos
-
-
-# ============================================================================
-# EXEMPLO DE INTEGRAÇÃO
-# ============================================================================
-
-if __name__ == "__main__":
-    print("""
-    ╔══════════════════════════════════════════════════════════════╗
-    ║  MÓDULO DE VISUALIZAÇÕES - APS_CERRADO                       ║
-    ╚══════════════════════════════════════════════════════════════╝
-    
-    Para integrar ao seu código existente em 'prev/cluster_predicao.py',
-    adicione após treinar o modelo:
-    
-    ───────────────────────────────────────────────────────────────
-    from render.visualizacoes_modelo import gerar_todas_visualizacoes
-    
-    # Após fazer as predições
-    y_pred = modelo.predict(X_test_scaled)
-    
-    # Gerar todas as visualizações
-    gerar_todas_visualizacoes(
-        modelo=modelo,
-        X=X_train,  # ou X (antes do split)
-        y_test=y_test,
-        y_pred=y_pred,
-        df_test=df_test  # DataFrame original do conjunto de teste
-    )
-    ───────────────────────────────────────────────────────────────
-    """)

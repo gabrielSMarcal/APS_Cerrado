@@ -533,7 +533,7 @@ def main(usar_grafo=True, total_registros=None):
     df_previsao = prever_dados(modelo, df_2026, padroes, usar_grafo=usar_grafo, grafo=grafo)
     
     # 7. Salvar resultados
-    nome_arquivo = f'./source/previsao_2026.csv'
+    nome_arquivo = f'./source/test/previsao_2026.csv'
     salvar_previsao(df_previsao, nome_arquivo)
     
     tempo_total = time.time() - inicio_geral
