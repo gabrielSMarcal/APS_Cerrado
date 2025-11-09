@@ -10,62 +10,48 @@ Dashboard interativo desenvolvido em **Dash** para análise preditiva de risco d
 
 ### ✨ Funcionalidades Principais
 
-- 📊 **Visualização Histórica**: Gráficos interativos de focos de incêndio por ano (2014-2025)
-- 🗺️ **Mapas de Calor**: Heatmaps geográficos com intensidade de risco por região
-- 🤖 **Modelo Preditivo**: Random Forest treinado com clustering para previsão de risco
-- 📈 **Métricas de Desempenho**: Avaliação completa do modelo (MAE, RMSE, R², Acurácia)
-- 🔮 **Previsão 2026**: Projeção de risco para o ano seguinte com filtros por estado
-- 📊 **Análise de Grafos**: Conexões espaço-temporais entre focos de incêndio
+- 📊 **Visualização Histórica**: Gráficos interativos de focos de incêndio por ano (2014-2025).
+- 🗺️ **Mapas de Calor**: Heatmaps geográficos com intensidade de risco por região.
+- 🤖 **Modelo Preditivo**: Random Forest treinado com clustering e features de grafo para previsão de risco.
+- 📈 **Métricas de Desempenho**: Avaliação completa do modelo (MAE, RMSE, R², Acurácia).
+- 🔮 **Previsão 2026**: Projeção de risco para o ano seguinte com filtros por estado.
+- 🕸️ **Análise de Grafos**: Conexões espaço-temporais entre focos de incêndio para enriquecer o modelo.
 
 ---
 
 ## 🏗️ Estrutura do Projeto
 
+A estrutura foi organizada de forma modular para separar as responsabilidades da aplicação, facilitando a manutenção e escalabilidade.
+
 ```
-Cerrado/
-├── 📁 app.py                      # Inicialização do aplicativo Dash
-├── 📁 main.py                     # Roteamento e layout principal
-├── 📁 cluster_gerar_previsao.py   # Script de geração de previsões 2026
-├── 📁 grafico_acuracia.py         # Geração de métricas e gráficos de avaliação
-├── 📁 lista_grafos.py             # Geração de gráficos por ano
+APS_Cerrado/
+├── 📄 app.py              # Inicializador da aplicação Dash
+├── 📄 main.py             # Ponto de entrada para executar o servidor
+├── 📄 gerar_modelo.py     # Script para treinar o modelo de ML
+├── 📄 gerar_previsao.py   # Script para gerar o arquivo de previsão para 2026
 │
-├── 📂 pages/                      # Páginas do dashboard
-│   ├── home.py                    # Página inicial
-│   ├── graficos.py                # Visualização histórica por ano
-│   ├── dados.py                   # Métricas e desempenho do modelo
-│   └── mapa.py                    # Mapa interativo de previsão 2026
+├── 📁 pages/              # Módulos de cada página do dashboard (home, graficos, etc.)
 │
-├── 📂 data/                       # Dados e conexões
-│   ├── connection.py              # Gerenciamento de conexões com CSVs
-│   ├── check_data.py              # Validação de dados
-│   ├── fonte.py                   # Formatação de dados
-│   ├── base_db/                   # CSVs históricos por ano (2014-2025)
-│   └── treated_db/                # Dados tratados e previsões
-│       ├── db_cerrado.csv         # Base consolidada
-│       └── previsao_2026.csv      # Previsão gerada
+├── 📁 data/                # Módulos de conexão e manipulação de dados
+│   ├── base_db/          # CSVs com dados históricos brutos por ano
+│   └── treated_db/       # CSVs com dados consolidados e tratados
 │
-├── 📂 cluster/                    # Machine Learning
-│   ├── cluster.py                 # K-means clustering
-│   ├── cluster_predicao.py        # Random Forest para predição
-│   ├── cluster_graph.py           # Análise de grafos espaço-temporais
-│   ├── cluster_utils.py           # Funções auxiliares
-│   └── predicao.py                # Funções de predição
+├── 📁 cluster/             # Lógica de pré-processamento e clustering
 │
-├── 📂 models/                     # Classes e TADs
-│   ├── Graph.py                   # TAD Grafo base
-│   ├── ClusterGraph.py            # Grafo para análise de clusters
-│   └── MapaInterativo.py          # Classe de mapa interativo encapsulado
+├── 📁 prev/                # Lógica de previsão (Machine Learning)
 │
-├── 📂 avaliacao_outputs/          # Resultados de avaliação
-│   ├── metrics_continuas_por_ano.csv
-│   ├── metrics_margem_por_ano.csv
-│   └── heatmap_*.html             # Heatmaps por ano
+├── 📁 models/              # Classes e Tipos Abstratos de Dados (TADs)
+│   └── TAD/              # Implementação de Grafos
 │
-├── 📂 assets/                     # Arquivos estáticos
-│   └── main.css                   # Estilos personalizados
+├── 📁 render/              # Scripts para gerar saídas visuais (gráficos, métricas)
 │
-├── 📄 requirements.txt            # Dependências do projeto
-└── 📄 README.md                   # Documentação
+├── 📁 source/              # Artefatos gerados (modelo .pkl e previsão .csv)
+│
+├── 📁 assets/              # Arquivos estáticos (CSS, imagens, etc.)
+│   └── avaliacao_outputs/ # Gráficos e métricas de avaliação do modelo
+│
+├── 📄 requirements.txt    # Dependências do projeto
+└── 📄 README.md           # Esta documentação
 ```
 
 ---
@@ -80,8 +66,8 @@ Cerrado/
 ### 1. Clone o Repositório
 
 ```bash
-git clone <url-do-repositorio>
-cd Cerrado
+git clone https://github.com/gabrielSMarcal/APS_Cerrado.git
+cd APS_Cerrado
 ```
 
 ### 2. Instale as Dependências
@@ -92,30 +78,27 @@ pip install -r requirements.txt
 
 ### 3. Prepare os Dados
 
-Certifique-se de que os CSVs históricos estão em [`data/base_db/`](data/base_db/). O sistema consolidará automaticamente em [`data/treated_db/db_cerrado.csv`](data/treated_db/db_cerrado.csv).
+Certifique-se de que os CSVs históricos (2014-2025) estão na pasta `data/base_db/`. O sistema consolidará os dados automaticamente quando necessário através do módulo `data/connection.py`.
 
-### 4. (Opcional) Gere Previsões para 2026
+### 4. (Opcional) Treine o Modelo de Machine Learning
 
-```bash
-python cluster_gerar_previsao.py
-```
-
-Este script:
-- Analisa padrões históricos (2014-2025)
-- Gera dados sintéticos inteligentes para 2026 (45k-60k registros)
-- Aplica o modelo treinado para prever risco
-- Salva resultado em [`data/treated_db/previsao_2026.csv`](data/treated_db/previsao_2026.csv)
-
-### 5. (Opcional) Gere Métricas de Avaliação
+Para gerar um novo arquivo de modelo (`.pkl`) a partir dos dados históricos:
 
 ```bash
-python grafico_acuracia.py
+python gerar_modelo.py
 ```
 
-Este script gera:
-- Métricas por ano (MAE, RMSE, R², Acurácia)
-- Gráficos de desempenho
-- Heatmaps HTML por ano em [`avaliacao_outputs/`](avaliacao_outputs/)
+Este script irá executar o pipeline de treinamento e salvar o artefato em `source/modelo_random_forest.pkl`.
+
+### 5. (Opcional) Gere as Previsões para 2026
+
+Para gerar o arquivo `previsao_2026.csv` usando o modelo treinado:
+
+```bash
+python gerar_previsao.py
+```
+
+Este script utiliza o modelo salvo para criar um cenário futuro e prever os riscos, salvando o resultado em `source/previsao_2026.csv`.
 
 ### 6. Inicie o Dashboard
 
@@ -129,35 +112,10 @@ Acesse no navegador: **http://127.0.0.1:8050**
 
 ## 📊 Páginas do Dashboard
 
-### 🏠 Página Inicial ([`/`](pages/home.py))
-- Introdução ao projeto
-- Navegação para outras seções
-
-### 📈 Gráficos por Ano ([`/graficos`](pages/graficos.py))
-- Mapas de dispersão interativos (2014-2025)
-- Visualização de focos de incêndio por estado
-- Filtros por ano
-
-### 🧮 Modelo de Previsão ([`/dados`](pages/dados.py))
-- Explicação do modelo (K-means + Random Forest)
-- Métricas de desempenho por ano:
-  - **MAE** (Mean Absolute Error)
-  - **RMSE** (Root Mean Square Error)
-  - **R²** (Coeficiente de Determinação)
-  - **Acurácia** (±10 pontos de margem)
-- Gráficos de evolução temporal
-- Heatmaps de risco por ano
-
-### 🗺️ Previsão 2026 ([`/mapa`](pages/mapa.py))
-- Mapa interativo de previsão
-- Filtros por estado do Cerrado
-- Estatísticas em tempo real:
-  - Total de registros
-  - Municípios afetados
-  - Distribuição por nível de risco:
-    - 🔴 Baixo (0-20): possível incêndio criminoso
-    - 🟡 Médio (21-70): condições favoráveis
-    - 🟢 Alto (71-100): incêndio natural provável
+- **🏠 Página Inicial (`/`)**: Introdução ao projeto e navegação para as demais seções.
+- **📈 Gráficos por Ano (`/graficos`)**: Mapas de dispersão interativos para os dados históricos (2014-2025), com filtros por ano e visualização da média de risco por estado.
+- **🧮 Modelo de Previsão (`/dados`)**: Explicação da metodologia de Machine Learning e apresentação das métricas de desempenho do modelo (MAE, RMSE, R², Acurácia) de forma interativa.
+- **🗺️ Previsão 2026 (`/mapa`)**: Mapa interativo com as previsões de risco de fogo para 2026, com filtros por estado e um painel de estatísticas detalhadas.
 
 ---
 
@@ -165,131 +123,38 @@ Acesse no navegador: **http://127.0.0.1:8050**
 
 ### Arquitetura
 
-1. **Pré-processamento**
-   - Criação de variáveis temporais (mês, dia do ano)
-   - Encoding de variáveis categóricas (Estado, Município)
-   - Normalização de features numéricas
-
-2. **K-means Clustering** ([`cluster/cluster.py`](cluster/cluster.py))
-   - Agrupa anos em 12 clusters (sazonalidade mensal)
-   - Análise de silhueta e método do cotovelo
-   - Opção de usar features de grafo espaço-temporal
-
-3. **Random Forest Regressor** ([`cluster/cluster_predicao.py`](cluster/cluster_predicao.py))
-   - Predição de `RiscoFogo` (0-100)
-   - Treinamento com validação temporal
-   - Feature importance analysis
+1.  **Pré-processamento (`cluster/preparacao_dados.py`)**: Criação de variáveis temporais, encoding de variáveis categóricas e normalização de features.
+2.  **Análise de Grafos (`models/TAD/ClusterGraph.py`)**: Construção de um grafo espaço-temporal para extrair features de conectividade (grau, centralidade), enriquecendo os dados.
+3.  **K-means Clustering (`cluster/cluster.py`)**: Usado para análise exploratória e para encontrar o número ideal de clusters, validado pelo método da silhueta.
+4.  **Random Forest Regressor (`prev/cluster_predicao.py`)**: Modelo principal que prevê o `RiscoFogo` (0-100), treinado com os dados enriquecidos pelo grafo.
 
 ### Variáveis Utilizadas
 
-**Features climáticas:**
-- `DiaSemChuva`: dias consecutivos sem precipitação
-- `Precipitacao`: precipitação acumulada (mm)
-- `FRP`: Fire Radiative Power
-
-**Features espaciais:**
-- `Latitude`, `Longitude`: coordenadas geográficas
-- `Estado`, `Municipio`: localização administrativa
-
-**Features temporais:**
-- `Mes_1` a `Mes_12`: variáveis dummy para sazonalidade
-- `Ano`, `DiaAno`: padrões temporais
-
-**Features de grafo** (opcional):
-- `grau`: número de conexões espaciais/temporais
-- `centralidade`: importância do ponto no grafo
-- `clustering_coef`: coeficiente de agrupamento local
+-   **Climáticas**: `DiaSemChuva`, `Precipitacao`, `FRP` (Fire Radiative Power).
+-   **Espaciais**: `Latitude`, `Longitude`, `Estado`, `Municipio`.
+-   **Temporais**: `Ano`, `DiaAno`, e dummies para os meses.
+-   **Grafo** (opcional): `grau`, `centralidade`, `clustering_coef`.
 
 ---
 
 ## 📦 Principais Dependências
 
-```
-dash==3.2.0                    # Framework web
-dash-bootstrap-components      # Componentes Bootstrap
-plotly==6.3.0                  # Gráficos interativos
-pandas==2.3.2                  # Manipulação de dados
-numpy==2.3.3                   # Operações numéricas
-scikit-learn==1.7.2            # Machine Learning
-folium==0.20.0                 # Mapas interativos
-matplotlib==3.10.7             # Visualizações estáticas
-```
+-   `dash`: Framework web
+-   `dash-bootstrap-components`: Componentes Bootstrap
+-   `plotly`: Gráficos interativos
+-   `pandas`: Manipulação de dados
+-   `scikit-learn`: Machine Learning
+-   `folium`: Mapas interativos (usado na geração de heatmaps de avaliação)
 
-Ver [`requirements.txt`](requirements.txt) para lista completa.
-
----
-
-## 🔧 Scripts Utilitários
-
-### [`cluster_gerar_previsao.py`](cluster_gerar_previsao.py)
-Gera previsões inteligentes para 2026:
-```bash
-python cluster_gerar_previsao.py
-```
-
-### [`grafico_acuracia.py`](grafico_acuracia.py)
-Avalia desempenho do modelo:
-```bash
-python grafico_acuracia.py
-```
-
-### [`lista_grafos.py`](lista_grafos.py)
-Gera lista de gráficos por ano (usado internamente).
-
----
-
-## 📈 Estrutura de Dados
-
-### CSV Principal: [`db_cerrado.csv`](data/treated_db/db_cerrado.csv)
-
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| `Data` | datetime | Data do registro |
-| `Latitude` | float | Latitude (graus) |
-| `Longitude` | float | Longitude (graus) |
-| `Estado` | string | Estado do Cerrado |
-| `Municipio` | string | Município |
-| `DiaSemChuva` | int | Dias sem precipitação |
-| `Precipitacao` | float | Precipitação (mm) |
-| `FRP` | float | Fire Radiative Power |
-| `RiscoFogo` | int | Risco de fogo (0-100) |
-
----
-
-## 🧪 Testes e Validação
-
-O modelo é validado usando:
-- **Validação temporal**: treino em anos anteriores, teste em anos seguintes
-- **Margem de erro**: acurácia com ±10 pontos de tolerância
-- **Métricas contínuas**: MAE, RMSE, R²
-
-Resultados salvos em [`avaliacao_outputs/`](avaliacao_outputs/).
-
----
-
-## 🎨 Personalização
-
-### Estilos CSS
-
-Edite [`assets/main.css`](assets/main.css) para customizar:
-- Cores do tema
-- Fontes e tipografia
-- Layout responsivo
-
-### Adicionar Novas Páginas
-
-1. Crie arquivo em [`pages/`](pages/)
-2. Importe em [`pages/__init__.py`](pages/__init__.py)
-3. Adicione rota em [`main.py`](main.py)
+Ver `requirements.txt` para a lista completa.
 
 ---
 
 ## 🙏 Agradecimentos
 
-- **INPE** - Dados de focos de incêndio
-- Comunidade **Plotly/Dash** - Framework web
-- Comunidade **scikit-learn** - Ferramentas de ML
+-   **INPE**: Fornecimento dos dados de focos de incêndio.
+-   Comunidades **Plotly/Dash** e **scikit-learn**.
 
 ---
 
-**⚠️ Disclaimer**: Este é um projeto educacional/acadêmico. As previsões devem ser validadas com especialistas antes de uso operacional.
+**⚠️ Disclaimer**: Este é um projeto com fins educacionais e acadêmicos. As previsões geradas são baseadas em padrões históricos e devem ser validadas por especialistas antes de qualquer uso operacional.
