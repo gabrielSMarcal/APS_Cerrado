@@ -3,7 +3,7 @@ from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from app import app
 from models.GraficoInterativo import GraficoInterativo
-from grafico_media_risco import gerar_grafico_media_risco_por_ano
+from render.grafico_media_risco import gerar_grafico_media_risco_por_ano
 import plotly.graph_objects as go
 
 # Inicializar a classe de gráficos interativos

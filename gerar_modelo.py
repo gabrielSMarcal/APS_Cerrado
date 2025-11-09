@@ -1,9 +1,9 @@
 from data.connection import connection
 from cluster.cluster_graph import construir_grafo_hibrido
-from cluster_predicao import treinar_modelo
+from prev.cluster_predicao import treinar_modelo
 import os
 
-os.makedirs('./models', exist_ok=True)
+os.makedirs('./source', exist_ok=True)
 
 print('🔄 Carregando dados históricos...')
 df = connection()

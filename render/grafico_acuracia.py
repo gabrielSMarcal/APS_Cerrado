@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from cluster.preparacao_dados import preparar_para_predicao, validar_features
-from cluster_predicao import treinar_modelo
+from prev.cluster_predicao import treinar_modelo
 from data.connection import connection 
 
 import folium
