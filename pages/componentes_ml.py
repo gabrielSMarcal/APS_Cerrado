@@ -154,19 +154,25 @@ def secao_grafo_espacotemporal():
                                 ], className="mb-0 small")
                             ], color="info", className="mb-3"),
                             
-                            # Placeholder para imagem do grafo
-                            html.Div([
-                                html.Img(
-                                    src='/assets/avaliacao_outputs/exemplo_grafo_visual.png',
-                                    style={'width': '100%', 'max-width': '400px'},
-                                    alt='Visualização de grafo espaço-temporal',
-                                    className="rounded shadow-sm"
-                                ),
-                                html.P(
-                                    "Exemplo de conexões espaço-temporais entre focos",
-                                    className="text-muted small text-center mt-2"
-                                )
-                            ], className="text-center")
+                            # Placeholder informativo sobre o grafo
+                            dbc.Alert([
+                                html.H6("🕸️ Visualização de Grafo Espaço-Temporal", className="alert-heading mb-3"),
+                                html.P([
+                                    "O grafo conecta focos de incêndio que ocorreram ",
+                                    html.Strong("próximos no espaço"),
+                                    " (até 50km) e ",
+                                    html.Strong("próximos no tempo"),
+                                    " (até 7 dias), criando uma rede de relações complexas."
+                                ], className="mb-2"),
+                                html.Hr(),
+                                html.P([
+                                    "📊 ",
+                                    html.Strong("Exemplo: "),
+                                    "Um foco em Brasília (15°S, 48°W) no dia 15/08 conecta-se a ",
+                                    "outro foco em Goiânia (16°S, 49°W) no dia 18/08, pois estão ",
+                                    "a ~200km (dentro do raio) e 3 dias de diferença."
+                                ], className="mb-0 small")
+                            ], color="info", className="text-center")
                         ], width=12, lg=5)
                     ])
                 ])
@@ -206,7 +212,7 @@ def secao_clustering_kmeans():
                         dbc.Col([
                             html.Div([
                                 html.Img(
-                                    src='/assets/avaliacao_outputs/elbow_silhouette_k12.png',
+                                    src='/assets/avaliacao_outputs/graficos_clustering.png',
                                     style={'width': '100%'},
                                     alt='Método do Cotovelo e Silhueta',
                                     className="rounded shadow-sm"
@@ -226,7 +232,7 @@ def secao_clustering_kmeans():
                         dbc.Col([
                             html.Div([
                                 html.Img(
-                                    src='/assets/avaliacao_outputs/pca_clusters_2d.png',
+                                    src='/assets/avaliacao_outputs/graficos_clustering.png',
                                     style={'width': '100%'},
                                     alt='Visualização PCA dos Clusters',
                                     className="rounded shadow-sm"
@@ -441,83 +447,3 @@ def alerta_contexto_metricas():
             ], color="success", className="mb-4")
         ], width=12)
     ])
-
-
-# ============================================================================
-# INSTRUÇÕES DE USO
-# ============================================================================
-
-"""
-COMO INTEGRAR À SUA PÁGINA dados.py EXISTENTE:
-
-1. Importe este módulo no início do arquivo:
-   
-   from pages.componentes_ml import (
-       secao_pipeline_overview,
-       secao_grafo_espacotemporal,
-       secao_clustering_kmeans,
-       secao_random_forest,
-       cards_metricas_melhorados,
-       alerta_contexto_metricas
-   )
-
-2. No layout, adicione os componentes na ordem desejada:
-
-   layout = dbc.Container([
-       dcc.Store(id='dados-carregados', data=None),
-       
-       # Cabeçalho existente
-       dbc.Row([...]),
-       
-       # NOVO: Pipeline Overview
-       secao_pipeline_overview(),
-       
-       # NOVO: Grafo Espaço-Temporal
-       secao_grafo_espacotemporal(),
-       
-       # NOVO: Clustering
-       secao_clustering_kmeans(),
-       
-       # NOVO: Random Forest
-       secao_random_forest(),
-       
-       # Seletor de ano (existente)
-       dbc.Row([...]),
-       
-       # NOVO: Cards de métricas melhorados (substitui os antigos)
-       cards_metricas_melhorados(),
-       
-       # NOVO: Contexto interpretativo
-       alerta_contexto_metricas(),
-       
-       # Gráficos existentes
-       dbc.Row([...])
-   ])
-
-3. Atualize o callback de métricas para incluir as interpretações:
-
-   @app.callback(
-       [Output('mae-value', 'children'),
-        Output('rmse-value', 'children'),
-        Output('r2-value', 'children'),
-        Output('acc-value', 'children'),
-        Output('mae-interpretation', 'children'),
-        Output('rmse-interpretation', 'children'),
-        Output('r2-interpretation', 'children'),
-        Output('acc-interpretation', 'children')],
-       Input('ano-dropdown', 'value')
-   )
-   def update_metrics_cards(ano_selecionado):
-       # ... seu código existente ...
-       
-       # Adicionar interpretações
-       mae_interp = f"Erro médio de {mae:.2f} unidades"
-       rmse_interp = "Penaliza erros grandes" if rmse > mae * 1.5 else "Erros consistentes"
-       r2_interp = f"Explica {r2*100:.1f}% da variação"
-       acc_interp = "Excelente precisão" if float(acc.strip('%')) > 90 else "Boa precisão"
-       
-       return (
-           f"{mae:.2f}", f"{rmse:.2f}", f"{r2:.3f}", acc,
-           mae_interp, rmse_interp, r2_interp, acc_interp
-       )
-"""

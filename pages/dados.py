@@ -193,6 +193,9 @@ def populate_anos(dados_carregados):
     Input('ano-dropdown', 'value')
 )
 def update_metrics_cards(ano_selecionado):
+    """
+    Atualiza os cards de métricas e suas interpretações
+    """
     if ano_selecionado is None or not os.path.exists(METRICS_PATH):
         return "-", "-", "-", "-", "-", "-", "-", "-"
     
@@ -202,30 +205,61 @@ def update_metrics_cards(ano_selecionado):
     row_metrics = df_metrics[df_metrics['Ano'] == ano_selecionado]
     
     if row_metrics.empty:
-        return "-", "-", "-", "-"
+        return "-", "-", "-", "-", "-", "-", "-", "-"
     
-    mae = f"{row_metrics['MAE'].values[0]:.2f}"
-    rmse = f"{row_metrics['RMSE'].values[0]:.2f}"
-    r2 = f"{row_metrics['R2'].values[0]:.3f}"
+    # Extrair valores numéricos ANTES de formatar
+    mae_num = row_metrics['MAE'].values[0]
+    rmse_num = row_metrics['RMSE'].values[0]
+    r2_num = row_metrics['R2'].values[0]
     
+    # Formatar para exibição nos cards
+    mae_str = f"{mae_num:.2f}"
+    rmse_str = f"{rmse_num:.2f}"
+    r2_str = f"{r2_num:.3f}"
+    
+    # Processar acurácia
     if not df_margin.empty:
         row_margin = df_margin[df_margin['Ano'] == ano_selecionado]
-        acc = f"{row_margin['accuracy_margin'].values[0]*100:.1f}%" if not row_margin.empty else "-"
+        if not row_margin.empty:
+            acc_num = row_margin['accuracy_margin'].values[0] * 100
+            acc_str = f"{acc_num:.1f}%"
+        else:
+            acc_str = "-"
+            acc_num = 0
     else:
-        acc = "-"
+        acc_str = "-"
+        acc_num = 0
     
-    mae_interp = f"Erro médio de {mae:.2f} unidades de risco"
-    rmse_interp = "Penaliza erros grandes" if rmse > mae * 1.5 else "Erros consistentes"
-    r2_interp = f"Explica {r2*100:.1f}% da variação"
+    # Usar valores numéricos para cálculos e comparações
+    mae_interp = f"Erro médio de {mae_num:.2f} unidades de risco"
     
-    try:
-        acc_num = float(acc.strip('%')) if isinstance(acc, str) else acc
-        acc_interp = "Excelente precisão!" if acc_num > 90 else "Boa precisão"
-    except:
+    # Comparar valores numéricos
+    if rmse_num > mae_num * 1.5:
+        rmse_interp = "Penaliza erros grandes"
+    else:
+        rmse_interp = "Erros consistentes"
+    
+    # Interpretar R²
+    if r2_num > 0.9:
+        r2_interp = f"Explica {r2_num*100:.1f}% da variação - Excelente!"
+    elif r2_num > 0.7:
+        r2_interp = f"Explica {r2_num*100:.1f}% da variação - Bom"
+    else:
+        r2_interp = f"Explica {r2_num*100:.1f}% da variação"
+    
+    # Interpretar acurácia
+    if acc_str != "-":
+        if acc_num > 90:
+            acc_interp = "Excelente precisão!"
+        elif acc_num > 80:
+            acc_interp = "Boa precisão"
+        else:
+            acc_interp = "Precisão aceitável"
+    else:
         acc_interp = "Precisão do modelo"
     
     return (
-        f"{mae:.2f}", f"{rmse:.2f}", f"{r2:.3f}", acc,
+        mae_str, rmse_str, r2_str, acc_str,
         mae_interp, rmse_interp, r2_interp, acc_interp
     )
 
@@ -470,4 +504,3 @@ def update_table(dados_carregados):
         striped=True,
         className="mb-0"
     )
-
