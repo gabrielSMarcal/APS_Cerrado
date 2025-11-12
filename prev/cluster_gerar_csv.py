@@ -366,7 +366,7 @@ def calibrar_risco_fogo(df_2026, padroes):
     
     def categorizar(r):
         if r <= 30: return 'Baixo'
-        elif r <= 79: return 'Médio'
+        elif r <= 80: return 'Médio'
         else: return 'Alto'
     
     df_2026['Cat'] = df_2026['RiscoFogo'].apply(categorizar)
