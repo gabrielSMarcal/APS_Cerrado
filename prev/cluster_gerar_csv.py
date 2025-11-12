@@ -345,11 +345,11 @@ def calibrar_risco_fogo(df_2026, padroes):
             # Baixo: 0-30 (distribuição beta inclinada para valores baixos)
             valores_risco.extend(np.random.beta(2, 5, n_baixo) * 30)
             
-            # Médio: 31-79 (distribuição uniforme)
-            valores_risco.extend(np.random.uniform(31, 79, n_medio))
+            # Médio: 31-80 (distribuição uniforme)
+            valores_risco.extend(np.random.uniform(31, 80, n_medio))
             
-            # Alto: 80-100 (distribuição beta inclinada para valores altos)
-            valores_risco.extend(80 + np.random.beta(5, 2, n_alto) * 20)
+            # Alto: 81-100 (distribuição beta inclinada para valores altos)
+            valores_risco.extend(81 + np.random.beta(5, 2, n_alto) * 20)
             
             # Embaralhar e atribuir
             np.random.shuffle(valores_risco)

@@ -182,11 +182,11 @@ def atualizar_mapa(n_clicks_geral, n_clicks_estados):
         # Classificação de Risco
         html.H6("📈 Risco", className="text-center mb-2", style={'fontSize': '0.95rem'}),
         
-        # Risco Baixo (0-20) - Possível incêndio criminoso
+        # Risco Baixo (0-30) - Possível incêndio criminoso
         html.Div([
             html.P([
                 html.Span("🔴 ", style={'fontSize': '1em'}),
-                html.Strong("Baixo (0-20)")
+                html.Strong("Baixo (0-30)")
             ], className="mb-0", style={'color': '#dc3545', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_baixo']['descricao'],
@@ -206,7 +206,7 @@ def atualizar_mapa(n_clicks_geral, n_clicks_estados):
         html.Div([
             html.P([
                 html.Span("🟡 ", style={'fontSize': '1em'}),
-                html.Strong("Médio (21-70)")
+                html.Strong("Médio (31-70)")
             ], className="mb-0", style={'color': '#ffc107', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_medio']['descricao'],
@@ -222,11 +222,11 @@ def atualizar_mapa(n_clicks_geral, n_clicks_estados):
             ], className="mb-2", style={'marginLeft': '1.2em', 'fontSize': '0.8rem'})
         ]),
         
-        # Risco Alto (71-100) - Possível incêndio natural
+        # Risco Alto (81-100) - Possível incêndio natural
         html.Div([
             html.P([
                 html.Span("🟢 ", style={'fontSize': '1em'}),
-                html.Strong("Alto (71-100)")
+                html.Strong("Alto (81-100)")
             ], className="mb-0", style={'color': '#28a745', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_alto']['descricao'],
