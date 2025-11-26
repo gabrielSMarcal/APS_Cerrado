@@ -153,7 +153,7 @@ def secao_grafo_espacotemporal():
                                     html.Strong("próximos no espaço"),
                                     " (até 50km) e ",
                                     html.Strong("próximos no tempo"),
-                                    " (até 7 dias), criando uma rede de relações complexas."
+                                    " (até 14 dias), criando uma rede de relações complexas."
                                 ], className="mb-2"),
                                 html.Hr(),
                                 html.P([
