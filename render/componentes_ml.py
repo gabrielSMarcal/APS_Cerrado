@@ -197,28 +197,7 @@ def secao_clustering_kmeans():
                         "A escolha de k=12 foi validada através de dois métodos complementares:",
                         className="mb-3"
                     ),
-                    
                     dbc.Row([
-                        dbc.Col([
-                            html.Div([
-                                html.Img(
-                                    src='/assets/avaliacao_outputs/graficos_clustering.png',
-                                    style={'width': '100%'},
-                                    alt='Método do Cotovelo e Silhueta',
-                                    className="rounded shadow-sm"
-                                )
-                            ], className="mb-3"),
-                            dbc.Alert([
-                                html.Strong("📈 Método do Cotovelo: "),
-                                "Mostra a inércia (distância dos pontos aos centróides). "
-                                "O 'cotovelo' em k=12 indica um bom equilíbrio.",
-                                html.Br(),
-                                html.Strong("📊 Score de Silhueta: "),
-                                "Mede a qualidade da separação dos clusters. "
-                                "Valores altos em k=12 confirmam a escolha."
-                            ], color="light", className="small")
-                        ], width=12, lg=6),
-                        
                         dbc.Col([
                             html.Div([
                                 html.Img(
@@ -234,8 +213,8 @@ def secao_clustering_kmeans():
                                 "Cores diferentes representam os 12 clusters, mostrando boa separação "
                                 "entre os grupos sazonais."
                             ], color="light", className="small")
-                        ], width=12, lg=6)
-                    ])
+                        ], width=12, lg=6, className="mx-auto")
+                    ], justify="center")
                 ])
             ], className="shadow-sm mb-5")
         ], width=12)
