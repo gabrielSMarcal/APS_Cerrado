@@ -101,7 +101,7 @@ def secao_grafo_espacotemporal():
                                 html.Strong("próximos no espaço"),
                                 " (até 50km de distância) e ",
                                 html.Strong("próximos no tempo"),
-                                " (até 7 dias de diferença). Essas conexões revelam padrões de "
+                                " (até 14 dias de diferença). Essas conexões revelam padrões de "
                                 "propagação e clusters de risco que não seriam capturados por "
                                 "variáveis isoladas."
                             ], className="mb-4"),

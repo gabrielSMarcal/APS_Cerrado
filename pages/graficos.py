@@ -17,7 +17,7 @@ valor_padrao = graficos.ano_mais_recente
 
 layout = dbc.Container([
     dcc.Store(id='ano-selecionado-store', data=valor_padrao),
-    html.H3("graficos por Ano", className="text-center my-4"),
+    html.H3("Graficos por Ano", className="text-center my-4"),
     dbc.Row([
         # Coluna lateral com lista de anos
         dbc.Col([
