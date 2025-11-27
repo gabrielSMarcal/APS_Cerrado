@@ -226,7 +226,7 @@ def atualizar_mapa(n_clicks_geral, n_clicks_estados):
         html.Div([
             html.P([
                 html.Span("🟢 ", style={'fontSize': '1em'}),
-                html.Strong("Alto (81-100)")
+                html.Strong("Alto (71-100)")
             ], className="mb-0", style={'color': '#28a745', 'fontSize': '0.85rem'}),
             html.P(
                 stats['risco_alto']['descricao'],
